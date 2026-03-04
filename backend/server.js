@@ -8,7 +8,9 @@ const connectDB      = require("./config/db");
 const authRoutes     = require("./routes/authRoutes");
 const courseRoutes   = require("./routes/courseRoutes");
 const quizRoutes     = require("./routes/quizRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
+const analyticsRoutes          = require("./routes/analyticsRoutes");
+const enrollmentRoutes         = require("./routes/enrollmentRoutes");
+const levelRegistrationRoutes  = require("./routes/levelRegistrationRoutes");
 
 // ── Connect Database ───────────────────────────────────────────────────────────
 connectDB();
@@ -25,7 +27,9 @@ if (process.env.NODE_ENV !== "test") app.use(morgan("dev"));
 app.use("/api/auth",      authRoutes);
 app.use("/api/courses",   courseRoutes);
 app.use("/api/quiz",      quizRoutes);
-app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics",         analyticsRoutes);
+app.use("/api/enrollments",       enrollmentRoutes);
+app.use("/api/level-reg",         levelRegistrationRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get("/api/health", (_, res) =>

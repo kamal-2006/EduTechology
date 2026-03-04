@@ -32,58 +32,84 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>;
-  if (error)   return <div className="page"><div className="alert alert-error">{error}</div></div>;
+  if (loading) return (
+    <div className="spinner-wrap">
+      <div className="spinner" />
+      <span>Loading dashboard…</span>
+    </div>
+  );
+  if (error) return (
+    <div className="page">
+      <div className="alert alert-error">{error}</div>
+    </div>
+  );
 
   return (
     <div className="page">
-      <h1 className="page-title">
-        {user.role === "admin"
-          ? "Admin Dashboard"
-          : `Welcome back, ${user.name} 👋`}
-      </h1>
+      {/* Header */}
+      <div className="page-header">
+        <h1 className="page-title">
+          {user.role === "admin" ? "Admin Dashboard" : `Welcome back, ${user.name} 👋`}
+        </h1>
+        <p className="page-subtitle">
+          {user.role === "admin"
+            ? "Manage your platform and monitor student performance."
+            : "Track your progress and continue learning."}
+        </p>
+      </div>
 
-      {/* ── Stats Row ─────────────────────────────────────────────────────── */}
+      {/* Dropout Risk Warning (student) */}
+      {user.role === "student" && analytics?.dropoutRisk === "Yes" && (
+        <div className="alert alert-error">
+          ⚠️ <strong>At-Risk Alert:</strong> Our ML model detected a dropout risk based on your recent activity. Consider revisiting course materials or reaching out for support.
+        </div>
+      )}
+
+      {/* Stats Row */}
       <div className="stats-grid">
         {user.role === "admin" ? (
           <>
-            <StatCard value={analytics?.totalStudents   ?? 0} label="Total Students" />
-            <StatCard value={analytics?.totalCourses    ?? 0} label="Total Courses" />
-            <StatCard value={analytics?.avgPlatformScore ?? 0} label="Avg Platform Score" suffix="%" />
-            <StatCard value={analytics?.atRiskStudents  ?? 0} label="At-Risk Students" color="#c53030" />
+            <StatCard icon="👥" value={analytics?.totalStudents   ?? 0} label="Total Students" />
+            <StatCard icon="📚" value={analytics?.totalCourses    ?? 0} label="Total Courses" />
+            <StatCard icon="📊" value={analytics?.avgPlatformScore ?? 0} label="Avg Platform Score" suffix="%" />
+            <StatCard icon="⚠️" value={analytics?.atRiskStudents  ?? 0} label="At-Risk Students" danger />
           </>
         ) : (
           <>
-            <StatCard value={analytics?.totalQuizzesTaken ?? 0} label="Quizzes Taken" />
-            <StatCard value={analytics?.averageScore      ?? 0} label="Average Score" suffix="%" />
-            <StatCard value={analytics?.recommendedLevel  ?? "N/A"} label="Recommended Level" isText />
-            <StatCard value={analytics?.predictedPerformance ?? "N/A"} label="Predicted Performance" isText />
+            <StatCard icon="✅" value={analytics?.totalQuizzesTaken ?? 0} label="Quizzes Taken" />
+            <StatCard icon="🎯" value={analytics?.averageScore      ?? 0} label="Average Score" suffix="%" />
+            <StatCard icon="📈" value={analytics?.recommendedLevel  ?? "N/A"} label="Recommended Level" isText />
+            <StatCard icon="🤖" value={analytics?.predictedPerformance ?? "N/A"} label="AI Prediction" isText />
           </>
         )}
       </div>
 
-      {/* ── Dropout Risk Warning (student) ────────────────────────────────── */}
-      {user.role === "student" && analytics?.dropoutRisk === "Yes" && (
-        <div className="alert alert-error" style={{ marginBottom: "1.5rem" }}>
-          ⚠️ <strong>At-Risk Alert:</strong> Our ML model has detected a dropout risk based on your recent performance. Please reach out to your instructor or try revisiting the material.
+      {/* Courses */}
+      <h2 className="section-title">Available Courses</h2>
+      {courses.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📭</div>
+          <p>No courses available yet.</p>
+        </div>
+      ) : (
+        <div className="card-grid">
+          {courses.map((course) => (
+            <CourseCard key={course._id} course={course} />
+          ))}
         </div>
       )}
 
-      {/* ── Courses ───────────────────────────────────────────────────────── */}
-      <h2 className="section-title">Available Courses</h2>
-      <div className="card-grid">
-        {courses.map((course) => (
-          <CourseCard key={course._id} course={course} />
-        ))}
-      </div>
-
-      {/* ── Quick links for admin ─────────────────────────────────────────── */}
+      {/* Admin Actions */}
       {user.role === "admin" && (
         <>
           <h2 className="section-title">Admin Actions</h2>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-            <Link to="/courses/create" className="btn btn-primary">+ Create Course</Link>
-            <Link to="/analytics/admin" className="btn btn-outline">Full Analytics →</Link>
+          <div style={{ display: "flex", gap: "0.85rem", flexWrap: "wrap" }}>
+            <Link to="/courses/create" className="btn btn-primary">
+              + Create Course
+            </Link>
+            <Link to="/analytics/admin" className="btn btn-outline">
+              Full Analytics →
+            </Link>
           </div>
         </>
       )}
@@ -91,10 +117,14 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ value, label, suffix = "", color, isText = false }) {
+function StatCard({ icon, value, label, suffix = "", danger = false, isText = false }) {
   return (
     <div className="stat-card">
-      <div className="stat-value" style={color ? { color } : {}}>
+      <div className="stat-icon">{icon}</div>
+      <div
+        className="stat-value"
+        style={danger ? { color: "var(--danger)" } : undefined}
+      >
         {isText ? value : `${value}${suffix}`}
       </div>
       <div className="stat-label">{label}</div>
@@ -104,20 +134,18 @@ function StatCard({ value, label, suffix = "", color, isText = false }) {
 
 function CourseCard({ course }) {
   return (
-    <div className="card" style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
-        <h2 style={{ flex: 1 }}>{course.title}</h2>
-        <span className={`badge diff-${course.difficulty}`} style={{ marginLeft: "0.5rem", whiteSpace: "nowrap" }}>
-          {course.difficulty}
-        </span>
+    <div className="course-card">
+      <div className="course-card-top">
+        <h2 className="course-card-title">{course.title}</h2>
+        <span className={`badge diff-${course.difficulty}`}>{course.difficulty}</span>
       </div>
-      <p style={{ flex: 1, marginBottom: "1rem" }}>{course.description}</p>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: "0.78rem", color: "#718096" }}>
-          {course.lessons?.length ?? 0} lessons
+      <p className="course-card-desc">{course.description}</p>
+      <div className="course-card-footer">
+        <span className="course-card-meta">
+          📖 {course.lessons?.length ?? 0} lessons
         </span>
         <Link to={`/courses/${course._id}`} className="btn btn-outline btn-sm">
-          View Course →
+          View →
         </Link>
       </div>
     </div>

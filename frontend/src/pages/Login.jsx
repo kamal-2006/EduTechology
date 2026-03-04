@@ -15,7 +15,6 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       const { data } = await authAPI.login(form);
       localStorage.setItem("token", data.token);
@@ -29,68 +28,97 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <h1>Welcome back</h1>
-        <p className="subtitle">Sign in to your learning account</p>
-
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Email address</label>
-            <input
-              type="email"
-              name="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-            {loading ? "Signing in…" : "Sign In"}
-          </button>
-        </form>
-
-        <p style={{ textAlign: "center", marginTop: "1.25rem", fontSize: "0.875rem", color: "#718096" }}>
-          Don't have an account?{" "}
-          <Link to="/register" style={{ color: "#2b6cb0", fontWeight: 600 }}>
-            Register
-          </Link>
-        </p>
-
-        {/* Quick-fill demo accounts */}
-        <div style={{ marginTop: "1.25rem", padding: "1rem", background: "#f7fafc", borderRadius: "8px" }}>
-          <p style={{ fontSize: "0.78rem", color: "#718096", marginBottom: "0.5rem", fontWeight: 600 }}>
-            DEMO ACCOUNTS
+    <div className="auth-page">
+      {/* Left branding panel */}
+      <div className="auth-panel-left">
+        <div className="auth-left-content">
+          <div className="auth-left-logo">🎓</div>
+          <h1 className="auth-left-title">Learn smarter with AI-powered education</h1>
+          <p className="auth-left-desc">
+            Personalized learning paths, adaptive quizzes, and real-time analytics to accelerate your growth.
           </p>
-          {[
-            { label: "Admin",     email: "admin@educationpsg.com", password: "admin1234" },
-            { label: "Student",   email: "alice@test.com",          password: "student1234" },
-          ].map((acc) => (
+          <ul className="auth-features">
+            {[
+              "AI-driven course recommendations",
+              "Adaptive quiz engine",
+              "Performance analytics & insights",
+              "Dropout risk prediction",
+            ].map((f) => (
+              <li key={f}>
+                <span className="auth-feature-check">✓</span>
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="auth-panel-right">
+        <div className="auth-form-container">
+          <div className="auth-form-header">
+            <h2 className="auth-form-title">Welcome back</h2>
+            <p className="auth-form-sub">Sign in to continue your learning journey</p>
+          </div>
+
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Email address</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
             <button
-              key={acc.label}
-              className="btn btn-outline btn-sm"
-              style={{ marginRight: "0.5rem", marginBottom: "0.4rem" }}
-              type="button"
-              onClick={() => setForm({ email: acc.email, password: acc.password })}
+              className="btn btn-primary btn-block btn-lg"
+              type="submit"
+              disabled={loading}
+              style={{ marginTop: "0.5rem" }}
             >
-              {acc.label}
+              {loading ? "Signing in…" : "Sign In"}
             </button>
-          ))}
+          </form>
+
+          <div className="divider-text">or use a demo account</div>
+
+          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+            {[
+              { label: "👤 Admin",   email: "admin@educationpsg.com", password: "admin1234" },
+              { label: "📚 Student", email: "alice@test.com",          password: "student1234" },
+            ].map((acc) => (
+              <button
+                key={acc.label}
+                className="btn btn-ghost btn-sm"
+                type="button"
+                onClick={() => setForm({ email: acc.email, password: acc.password })}
+              >
+                {acc.label}
+              </button>
+            ))}
+          </div>
+
+          <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
+            Don't have an account?{" "}
+            <Link to="/register" style={{ color: "var(--primary)", fontWeight: 600 }}>Create one</Link>
+          </p>
         </div>
       </div>
     </div>

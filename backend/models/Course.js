@@ -16,6 +16,23 @@ const courseSchema = new mongoose.Schema(
       enum: ["Beginner", "Intermediate", "Advanced"],
       default: "Beginner",
     },
+    image: {
+      type:    String,
+      default: "",
+    },
+    topics: {
+      type:    [String],
+      default: [],
+    },
+    levels: [
+      {
+        levelNumber: { type: Number, required: true },
+        title:       { type: String, required: true },
+        studyNotes:  { type: String, default: "" },
+        videoUrl:    { type: String, default: "" },
+        isPublished: { type: Boolean, default: true },
+      },
+    ],
     lessons: [
       {
         title: { type: String, required: true },

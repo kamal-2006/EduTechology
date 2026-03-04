@@ -27,7 +27,8 @@ const quizSchema = new mongoose.Schema(
         message: "A quiz must have at least one question.",
       },
     },
-    totalMarks: { type: Number, default: 100 },
+    totalMarks:   { type: Number, default: 100 },
+    levelNumber:  { type: Number, default: null },   // null = general course quiz
   },
   { timestamps: true }
 );

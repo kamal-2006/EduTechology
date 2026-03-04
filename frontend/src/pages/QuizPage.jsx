@@ -7,12 +7,12 @@ export default function QuizPage() {
   const [searchParams]  = useSearchParams();
   const courseId        = searchParams.get("courseId");
 
-  const [quiz,     setQuiz]     = useState(null);
-  const [answers,  setAnswers]  = useState({});
-  const [loading,  setLoading]  = useState(true);
+  const [quiz,       setQuiz]       = useState(null);
+  const [answers,    setAnswers]    = useState({});
+  const [loading,    setLoading]    = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [result,   setResult]   = useState(null);
-  const [error,    setError]    = useState("");
+  const [result,     setResult]     = useState(null);
+  const [error,      setError]      = useState("");
 
   const startTime = useRef(Date.now());
 
@@ -31,23 +31,21 @@ export default function QuizPage() {
   }, [quizId]);
 
   const handleSelect = (questionId, option) => {
-    if (result) return; // locked after submission
+    if (result) return;
     setAnswers((prev) => ({ ...prev, [questionId]: option }));
   };
 
   const handleSubmit = async () => {
     if (!courseId) return setError("Course context missing.");
     const unanswered = quiz.questions.filter((q) => !answers[q._id]);
-    if (unanswered.length > 0) {
+    if (unanswered.length > 0)
       return setError(`Please answer all ${unanswered.length} remaining question(s).`);
-    }
 
     const timeTakenMs = Date.now() - startTime.current;
-    const timeTaken   = Math.max(1, Math.round(timeTakenMs / 60000)); // minutes
+    const timeTaken   = Math.max(1, Math.round(timeTakenMs / 60000));
 
     setSubmitting(true);
     setError("");
-
     try {
       const { data } = await quizAPI.submit({ quizId, courseId, answers, timeTaken });
       setResult(data.data);
@@ -58,43 +56,75 @@ export default function QuizPage() {
     }
   };
 
-  if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>;
+  if (loading) return (
+    <div className="spinner-wrap">
+      <div className="spinner" />
+      <span>Loading quiz…</span>
+    </div>
+  );
   if (error && !quiz) return <div className="page"><div className="alert alert-error">{error}</div></div>;
   if (!quiz)          return <div className="page"><div className="alert alert-error">Quiz not found.</div></div>;
 
+  const answeredCount = Object.keys(answers).length;
+  const totalQ        = quiz.questions.length;
+  const progress      = Math.round((answeredCount / totalQ) * 100);
+
   return (
     <div className="page">
+      {/* Header */}
       <div style={{ marginBottom: "1.5rem" }}>
-        <Link to={courseId ? `/courses/${courseId}` : "/"} className="btn btn-outline btn-sm">
+        <Link to={courseId ? `/courses/${courseId}` : "/"} className="btn btn-ghost btn-sm">
           ← Back to Course
         </Link>
       </div>
 
-      <h1 className="page-title">{quiz.title}</h1>
-      <p style={{ color: "#4a5568", marginBottom: "2rem" }}>
-        {quiz.questions.length} questions · {quiz.totalMarks} total marks
-      </p>
+      <div className="page-header">
+        <h1 className="page-title">{quiz.title}</h1>
+        <p className="page-subtitle">{totalQ} questions &nbsp;·&nbsp; {quiz.totalMarks} total marks</p>
+      </div>
+
+      {/* Progress bar */}
+      {!result && (
+        <div style={{ marginBottom: "1.75rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem", fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600 }}>
+            <span>Progress</span>
+            <span>{answeredCount} / {totalQ} answered</span>
+          </div>
+          <div style={{ height: "6px", background: "var(--border)", borderRadius: "999px", overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${progress}%`,
+              background: "var(--primary)",
+              borderRadius: "999px",
+              transition: "width 0.3s ease",
+            }} />
+          </div>
+        </div>
+      )}
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      {/* ── Questions ─────────────────────────────────────────────────────── */}
+      {/* Questions */}
       {quiz.questions.map((q, idx) => (
-        <div key={q._id} className="card quiz-question">
-          <h3>Q{idx + 1}. {q.questionText}</h3>
+        <div key={q._id} className="quiz-question">
+          <h3>
+            <span className="quiz-question-num">{idx + 1}</span>
+            {q.questionText}
+          </h3>
           {q.options.map((opt) => {
             const sel       = answers[q._id] === opt;
             const isCorrect = result && opt === q.correctAnswer;
             const isWrong   = result && sel && opt !== q.correctAnswer;
 
-            let style = {};
-            if (isCorrect) style = { borderColor: "#276749", background: "#f0fff4" };
-            if (isWrong)   style = { borderColor: "#c53030", background: "#fff5f5" };
+            let extraStyle = {};
+            if (isCorrect) extraStyle = { borderColor: "var(--success)", background: "var(--success-light)", color: "#065f46" };
+            if (isWrong)   extraStyle = { borderColor: "var(--danger)",  background: "var(--danger-light)",  color: "#991b1b" };
 
             return (
               <label
                 key={opt}
                 className={`quiz-option${sel ? " selected" : ""}`}
-                style={style}
+                style={extraStyle}
                 onClick={() => handleSelect(q._id, opt)}
               >
                 <input
@@ -104,57 +134,65 @@ export default function QuizPage() {
                   checked={sel}
                   onChange={() => handleSelect(q._id, opt)}
                   disabled={!!result}
-                  style={{ accentColor: "#2b6cb0" }}
                 />
-                {opt}
-                {isCorrect && <span style={{ marginLeft: "auto", color: "#276749", fontWeight: 700 }}>✓ Correct</span>}
-                {isWrong   && <span style={{ marginLeft: "auto", color: "#c53030", fontWeight: 700 }}>✗ Wrong</span>}
+                <span style={{ flex: 1 }}>{opt}</span>
+                {isCorrect && <span style={{ fontWeight: 700, fontSize: "0.8rem" }}>✓ Correct</span>}
+                {isWrong   && <span style={{ fontWeight: 700, fontSize: "0.8rem" }}>✗ Wrong</span>}
               </label>
             );
           })}
         </div>
       ))}
 
-      {/* ── Submit ────────────────────────────────────────────────────────── */}
+      {/* Submit */}
       {!result && (
         <button
-          className="btn btn-success"
+          className="btn btn-success btn-lg"
           onClick={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || answeredCount < totalQ}
           style={{ marginTop: "0.5rem" }}
         >
-          {submitting ? "Submitting…" : "Submit Quiz"}
+          {submitting ? "Submitting…" : `Submit Quiz (${answeredCount}/${totalQ})`}
         </button>
       )}
 
-      {/* ── Result ────────────────────────────────────────────────────────── */}
+      {/* Result */}
       {result && (
         <div className="result-box">
-          <h2>🎉 Quiz Complete!</h2>
-          <div className="result-row">
-            <span>Score</span>
-            <span>{result.quizScore}% ({result.correct}/{result.total} correct)</span>
+          <div className="result-box-header">
+            <div className="result-score-circle">
+              <span className="result-score-num">{result.quizScore}%</span>
+              <span className="result-score-pct">{result.correct}/{result.total}</span>
+            </div>
+            <div>
+              <h2>Quiz Complete!</h2>
+              <p style={{ color: "#166534", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                Great job completing this quiz.
+              </p>
+            </div>
           </div>
-          <div className="result-row">
-            <span>Recommended Level</span>
-            <span className={`badge diff-${result.recommendedLevel}`}>{result.recommendedLevel}</span>
+          <div className="result-rows">
+            <div className="result-row">
+              <span>Recommended Level</span>
+              <span className={`badge diff-${result.recommendedLevel}`}>{result.recommendedLevel}</span>
+            </div>
+            <div className="result-row">
+              <span>Predicted Performance</span>
+              <span className={`badge badge-${result.predictedPerformance === "High" ? "green" : result.predictedPerformance === "Medium" ? "yellow" : "red"}`}>
+                {result.predictedPerformance}
+              </span>
+            </div>
+            <div className="result-row">
+              <span>Dropout Risk</span>
+              <span className={`badge badge-${result.dropoutRisk === "Yes" ? "red" : "green"}`}>
+                {result.dropoutRisk}
+              </span>
+            </div>
           </div>
-          <div className="result-row">
-            <span>Predicted Performance</span>
-            <span className={`badge badge-${result.predictedPerformance === "High" ? "green" : result.predictedPerformance === "Medium" ? "yellow" : "red"}`}>
-              {result.predictedPerformance}
-            </span>
-          </div>
-          <div className="result-row">
-            <span>Dropout Risk</span>
-            <span className={`badge badge-${result.dropoutRisk === "Yes" ? "red" : "green"}`}>
-              {result.dropoutRisk}
-            </span>
-          </div>
-          <div style={{ marginTop: "1.25rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link to="/" className="btn btn-primary btn-sm">Go to Dashboard</Link>
             {courseId && (
-              <Link to={`/courses/${courseId}`} className="btn btn-outline btn-sm">Back to Course</Link>
+              <Link to={`/courses/${courseId}`} className="btn btn-ghost btn-sm">Back to Course</Link>
             )}
           </div>
         </div>

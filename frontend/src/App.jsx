@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Navbar         from "./components/Navbar.jsx";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { createContext, useState, useEffect }                   from "react";
+import Sidebar        from "./components/Sidebar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Login          from "./pages/Login.jsx";
 import Register       from "./pages/Register.jsx";
@@ -7,22 +8,52 @@ import Dashboard      from "./pages/Dashboard.jsx";
 import CoursePage     from "./pages/CoursePage.jsx";
 import QuizPage       from "./pages/QuizPage.jsx";
 import Analytics      from "./pages/Analytics.jsx";
+import Students       from "./pages/Students.jsx";
+import LevelPage      from "./pages/LevelPage.jsx";
+
+/* Shared auth context so pages can read current user without prop-drilling */
+export const AuthContext = createContext({ user: null, setUser: () => {} });
+
+/* AuthProvider reads user from localStorage and provides it via context */
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("user")); } catch { return null; }
+  });
+  useEffect(() => {
+    const sync = () => {
+      try { setUser(JSON.parse(localStorage.getItem("user"))); } catch { setUser(null); }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  return <AuthContext.Provider value={{ user, setUser }}>{children}</AuthContext.Provider>;
+}
+
+/* Wrap authenticated pages with the sidebar layout */
+function AppShell({ children }) {
+  return (
+    <div className="app-layout">
+      <Sidebar />
+      <main className="main-content">{children}</main>
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Navbar />
-      <Routes>
-        {/* Public */}
+      <AuthProvider>
+        <Routes>
+        {/* Public – no sidebar */}
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected – any authenticated user */}
+        {/* Protected – sidebar layout */}
         <Route
           path="/"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <AppShell><Dashboard /></AppShell>
             </ProtectedRoute>
           }
         />
@@ -30,7 +61,7 @@ export default function App() {
           path="/courses/:id"
           element={
             <ProtectedRoute>
-              <CoursePage />
+              <AppShell><CoursePage /></AppShell>
             </ProtectedRoute>
           }
         />
@@ -38,7 +69,7 @@ export default function App() {
           path="/quiz/:quizId"
           element={
             <ProtectedRoute>
-              <QuizPage />
+              <AppShell><QuizPage /></AppShell>
             </ProtectedRoute>
           }
         />
@@ -46,7 +77,23 @@ export default function App() {
           path="/analytics/:id"
           element={
             <ProtectedRoute>
-              <Analytics />
+              <AppShell><Analytics /></AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/students"
+          element={
+            <ProtectedRoute>
+              <AppShell><Students /></AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courses/:courseId/level/:levelNum"
+          element={
+            <ProtectedRoute>
+              <AppShell><LevelPage /></AppShell>
             </ProtectedRoute>
           }
         />
@@ -54,6 +101,8 @@ export default function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
+

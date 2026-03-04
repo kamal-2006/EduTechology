@@ -38,6 +38,10 @@ const progressSchema = new mongoose.Schema(
       enum: ["Yes", "No"],
       default: "No",
     },
+
+    // Level tracking
+    levelNumber: { type: Number, default: null },
+    passed:      { type: Boolean, default: false },
   },
   { timestamps: true }
 );

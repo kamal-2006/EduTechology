@@ -57,4 +57,25 @@ export const analyticsAPI = {
   getAdminAnalytics:   ()   => api.get("/analytics/admin"),
 };
 
+// ── Enrollments ───────────────────────────────────────────────────────────────
+export const enrollmentAPI = {
+  enroll:           (courseId)               => api.post("/enrollments", { courseId }),
+  getMyEnrollments: ()                       => api.get("/enrollments/my"),
+  checkEnrollment:  (courseId)               => api.get(`/enrollments/check/${courseId}`),
+  unenroll:         (courseId)               => api.delete(`/enrollments/${courseId}`),
+  completeLevel:    (courseId, levelNumber)  => api.patch(`/enrollments/${courseId}/complete-level`, { levelNumber }),
+  getAllEnrollments: ()                       => api.get("/enrollments/admin"),
+};
+
+// ── Level Registration ────────────────────────────────────────────────────────
+export const levelRegAPI = {
+  registerLevel:       (courseId, levelNumber)                   => api.post("/level-reg/register", { courseId, levelNumber }),
+  getMyActiveLevels:   ()                                        => api.get("/level-reg/my-levels"),
+  getAllCoursesStatus:  ()                                        => api.get("/level-reg/all-courses-status"),
+  getCourseStatus:     (courseId)                                => api.get(`/level-reg/course-status/${courseId}`),
+  submitQuiz:          (courseId, levelNumber, answers, timeTaken) => api.post("/level-reg/submit-quiz", { courseId, levelNumber, answers, timeTaken }),
+  getAttemptHistory:   (courseId, levelNumber)                   => api.get(`/level-reg/attempts/${courseId}/${levelNumber}`),
+  getAllRegistrations:  ()                                        => api.get("/level-reg/admin/all"),
+};
+
 export default api;
