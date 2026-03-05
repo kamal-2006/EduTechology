@@ -133,10 +133,16 @@ export default function Sidebar() {
           )}
 
           {user.role === "student" && (
-            <NavLink to="/students">
-              <Icon.Students />
-              My Courses
-            </NavLink>
+            <>
+              <NavLink to="/students">
+                <Icon.Courses />
+                Available Courses
+              </NavLink>
+              <NavLink to="/my-courses">
+                <Icon.Students />
+                My Courses
+              </NavLink>
+            </>
           )}
 
           <span className="sidebar-section-label">Analytics</span>

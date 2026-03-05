@@ -9,6 +9,7 @@ import CoursePage     from "./pages/CoursePage.jsx";
 import QuizPage       from "./pages/QuizPage.jsx";
 import Analytics      from "./pages/Analytics.jsx";
 import Students       from "./pages/Students.jsx";
+import MyCourses      from "./pages/MyCourses.jsx";
 import LevelPage      from "./pages/LevelPage.jsx";
 
 /* Shared auth context so pages can read current user without prop-drilling */
@@ -86,6 +87,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AppShell><Students /></AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-courses"
+          element={
+            <ProtectedRoute>
+              <AppShell><MyCourses /></AppShell>
             </ProtectedRoute>
           }
         />
