@@ -80,4 +80,21 @@ const getMe = async (req, res) => {
   res.status(200).json({ success: true, user: req.user });
 };
 
-module.exports = { register, login, getMe };
+// ── GET /api/auth/students ─────────────────────────────────────────────────────
+const getAllStudents = async (req, res) => {
+  try {
+    const students = await User.find({ role: "student" })
+      .select("-password")
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { register, login, getMe, getAllStudents };

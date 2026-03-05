@@ -1906,3 +1906,33 @@ tbody tr:hover td { background: var(--surface-2); }
   .sp-course-grid, .sp-my-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Professional Dashboard Responsive Styles ─────────────────────────────── */
+@media (max-width: 1200px) {
+  /* Stack main content and activity sidebar on smaller screens */
+  .dashboardContainer { padding: 16px !important; }
+  .mainGrid { grid-template-columns: 1fr !important; }
+  .rightColumn { margin-top: 24px; }
+}
+
+@media (max-width: 768px) {
+  /* Mobile optimizations */
+  .topHeader { flex-direction: column; gap: 12px; padding: 12px !important; }
+  .searchContainer { max-width: 100% !important; }
+  .headerRight { width: 100%; justify-content: space-between; }
+  .welcomeSection { flex-direction: column; align-items: flex-start !important; gap: 16px; }
+  .dateBox { align-self: flex-start; }
+  .welcomeTitle { font-size: 22px !important; }
+  .statsGrid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; }
+  .coursesGrid { grid-template-columns: 1fr !important; }
+  .quickActionsGrid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile devices */
+  .statsGrid { grid-template-columns: 1fr !important; }
+  .quickActionsGrid { grid-template-columns: 1fr !important; }
+  .topHeader { padding: 8px !important; }
+  .welcomeTitle { font-size: 18px !important; }
+  .userInfo { display: none; }
+}
+

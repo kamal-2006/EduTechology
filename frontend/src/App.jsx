@@ -11,6 +11,7 @@ import Analytics      from "./pages/Analytics.jsx";
 import Students       from "./pages/Students.jsx";
 import MyCourses      from "./pages/MyCourses.jsx";
 import LevelPage      from "./pages/LevelPage.jsx";
+import StudentDetails from "./pages/StudentDetails.jsx";
 
 /* Shared auth context so pages can read current user without prop-drilling */
 export const AuthContext = createContext({ user: null, setUser: () => {} });
@@ -87,6 +88,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AppShell><Students /></AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student-details"
+          element={
+            <ProtectedRoute>
+              <AppShell><StudentDetails /></AppShell>
             </ProtectedRoute>
           }
         />

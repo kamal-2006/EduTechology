@@ -4,9 +4,11 @@ import { authAPI } from "../services/api.js";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [form,    setForm]    = useState({ email: "", password: "" });
-  const [error,   setError]   = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState("student");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -18,7 +20,7 @@ export default function Login() {
     try {
       const { data } = await authAPI.login(form);
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user",  JSON.stringify(data.user));
+      localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
@@ -28,255 +30,560 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.page}>
-      {/* ── Left illustration panel ── */}
-      <div style={styles.left}>
-        <div style={styles.leftInner}>
-          <div style={styles.brand}>
-            <span style={styles.brandIcon}>🎓</span>
-            <span style={styles.brandName}>EduLearn AI</span>
+    <>
+      <style>{`
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+          overflow: hidden;
+        }
+        .hero-section {
+          display: flex;
+        }
+        .mobile-logo {
+          display: none;
+        }
+        @media (max-width: 1024px) {
+          .hero-section {
+            display: none !important;
+          }
+          .mobile-logo {
+            display: flex !important;
+          }
+        }
+      `}</style>
+      <div style={styles.container}>
+        {/* Left Section: Hero */}
+        <div style={styles.leftSection} className="hero-section">
+        {/* Abstract background elements */}
+        <div style={styles.bgOverlay}>
+          <div style={styles.bgCircle1}></div>
+          <div style={styles.bgCircle2}></div>
+        </div>
+
+        <div style={styles.heroContent}>
+          {/* Logo */}
+          <div style={styles.logoContainer}>
+            <div style={styles.logoBox}>
+              <svg style={styles.logoSvg} fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z" fill="currentColor"></path>
+              </svg>
+            </div>
+            <span style={styles.logoText}>EduAI</span>
           </div>
-          <h1 style={styles.tagline}>Learn smarter,<br />grow faster.</h1>
-          <p style={styles.taglineSub}>
-            AI-powered courses, adaptive quizzes,<br />and real‑time progress insights.
+
+          {/* Hero Text */}
+          <h1 style={styles.heroTitle}>
+            AI-Powered Personalized Learning for Everyone.
+          </h1>
+          <p style={styles.heroSubtitle}>
+            Unlock your potential with AI-driven education. Join thousands of students achieving their learning goals.
           </p>
-          {/* SVG Illustration */}
-          <div style={styles.illustration}>
-            <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: 380 }}>
-              {/* desk */}
-              <rect x="40" y="220" width="320" height="12" rx="6" fill="rgba(255,255,255,0.15)"/>
-              {/* monitor base */}
-              <rect x="178" y="195" width="44" height="28" rx="4" fill="rgba(255,255,255,0.18)"/>
-              <rect x="155" y="218" width="90" height="6" rx="3" fill="rgba(255,255,255,0.18)"/>
-              {/* monitor */}
-              <rect x="110" y="90" width="180" height="112" rx="10" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/>
-              {/* screen glow */}
-              <rect x="120" y="100" width="160" height="92" rx="6" fill="rgba(99,102,241,0.35)"/>
-              {/* code lines on screen */}
-              <rect x="134" y="116" width="68" height="6" rx="3" fill="rgba(255,255,255,0.7)"/>
-              <rect x="134" y="130" width="100" height="5" rx="2.5" fill="rgba(255,255,255,0.4)"/>
-              <rect x="134" y="143" width="80" height="5" rx="2.5" fill="rgba(255,255,255,0.45)"/>
-              <rect x="134" y="156" width="110" height="5" rx="2.5" fill="rgba(255,255,255,0.35)"/>
-              <rect x="134" y="169" width="60" height="5" rx="2.5" fill="rgba(255,255,255,0.5)"/>
-              {/* chart bar */}
-              <rect x="236" y="148" width="14" height="40" rx="4" fill="rgba(167,139,250,0.7)"/>
-              <rect x="254" y="133" width="14" height="55" rx="4" fill="rgba(129,140,248,0.8)"/>
-              <rect x="218" y="158" width="14" height="30" rx="4" fill="rgba(196,181,253,0.6)"/>
-              {/* floating badge 1 */}
-              <rect x="280" y="68" width="80" height="30" rx="10" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5"/>
-              <circle cx="297" cy="83" r="7" fill="#10b981"/>
-              <text x="310" y="88" fontSize="10" fill="rgba(255,255,255,0.9)" fontFamily="Inter,sans-serif" fontWeight="600">Passed!</text>
-              {/* floating badge 2 */}
-              <rect x="40" y="76" width="88" height="30" rx="10" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5"/>
-              <circle cx="57" cy="91" r="7" fill="#6366f1"/>
-              <text x="70" y="96" fontSize="9.5" fill="rgba(255,255,255,0.9)" fontFamily="Inter,sans-serif" fontWeight="600">AI Score 94%</text>
-              {/* person silhouette */}
-              <circle cx="68" cy="155" r="16" fill="rgba(255,255,255,0.18)"/>
-              <path d="M44 220 Q44 185 68 185 Q92 185 92 220" fill="rgba(255,255,255,0.13)"/>
-              {/* sparkles */}
-              <circle cx="340" cy="130" r="4" fill="rgba(255,255,255,0.35)"/>
-              <circle cx="356" cy="115" r="2.5" fill="rgba(255,255,255,0.25)"/>
-              <circle cx="50" cy="200" r="3" fill="rgba(255,255,255,0.2)"/>
-            </svg>
+
+          {/* Image Container */}
+          <div style={styles.imageContainer}>
+            <div style={{
+              ...styles.image,
+              backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAgRPiFVjVMPM4ext6TfdcQ9DQYTbq9cQoUO9knUEFK7L4IvD9hv9oAuHd6PQg5mBYQhDpnBtlHULJkHf_YSFDvjJ1EaTuwODwXsW0qsVr0dziM1ZS3en1qJms7FlxO9jpgUBuR7pS576gOBvok5nxmqCTmknbi1AtpLae3g3VOEIcVTVvuCK0L65pa2rG_JeCRXg5etqc5GV95b6SgLzFDVDpFddPL0oMm3MCQN2wTiMLLAOpwibmQ04wJnu8EO9kWrPYqcu7Fow')"
+            }}></div>
           </div>
         </div>
       </div>
 
-      {/* ── Right form panel ── */}
-      <div style={styles.right}>
-        <div style={styles.card}>
-          <div style={{ marginBottom: "2rem" }}>
-            <h2 style={styles.formTitle}>Welcome back</h2>
-            <p style={styles.formSub}>Sign in to continue your learning journey</p>
+      {/* Right Section: Login Card */}
+      <div style={styles.rightSection}>
+        <div style={styles.formContainer}>
+          {/* Mobile Logo */}
+          <div style={styles.mobileLogoContainer} className="mobile-logo">
+            <svg style={styles.mobileLogoSvg} fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z" fill="currentColor"></path>
+            </svg>
+            <span style={styles.mobileLogoText}>EduAI</span>
           </div>
 
+          {/* Header */}
+          <div style={styles.header}>
+            <h2 style={styles.title}>Welcome Back</h2>
+            <p style={styles.subtitle}>Sign in to continue your learning journey.</p>
+          </div>
+
+          {/* Role Selector Tabs */}
+          <div style={styles.tabsContainer}>
+            <button
+              type="button"
+              onClick={() => setRole("student")}
+              style={role === "student" ? styles.tabActive : styles.tabInactive}
+              onMouseEnter={(e) => {
+                if (role !== "student") e.currentTarget.style.color = "#334155";
+              }}
+              onMouseLeave={(e) => {
+                if (role !== "student") e.currentTarget.style.color = "#64748b";
+              }}
+            >
+              Student
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole("admin")}
+              style={role === "admin" ? styles.tabActive : styles.tabInactive}
+              onMouseEnter={(e) => {
+                if (role !== "admin") e.currentTarget.style.color = "#334155";
+              }}
+              onMouseLeave={(e) => {
+                if (role !== "admin") e.currentTarget.style.color = "#64748b";
+              }}
+            >
+              Admin
+            </button>
+          </div>
+
+          {/* Error Message */}
           {error && (
             <div style={styles.errorBox}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-            <Field label="Email address">
-              <input
-                type="email" name="email" autoComplete="email"
-                placeholder="you@example.com"
-                value={form.email} onChange={handleChange} required
-                style={styles.input}
-                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
-                onBlur={(e)  => e.target.style.borderColor = "#e2e8f0"}
-              />
-            </Field>
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} style={styles.form}>
+            {/* Email Field */}
+            <div style={styles.fieldContainer}>
+              <label style={styles.label}>Email or Username</label>
+              <div style={styles.inputWrapper}>
+                <span style={styles.icon}>✉</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  placeholder="Enter your email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#6366f1";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "#e2e8f0";
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+              </div>
+            </div>
 
-            <Field label="Password">
-              <input
-                type="password" name="password" autoComplete="current-password"
-                placeholder="••••••••"
-                value={form.password} onChange={handleChange} required
-                style={styles.input}
-                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
-                onBlur={(e)  => e.target.style.borderColor = "#e2e8f0"}
-              />
-            </Field>
+            {/* Password Field */}
+            <div style={styles.fieldContainer}>
+              <div style={styles.labelRow}>
+                <label style={styles.label}>Password</label>
+                <a href="#" style={styles.forgotLink}>Forgot Password?</a>
+              </div>
+              <div style={styles.inputWrapper}>
+                <span style={styles.icon}>🔒</span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  style={styles.input}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = "#6366f1";
+                    e.target.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = "#e2e8f0";
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                </button>
+              </div>
+            </div>
 
+            {/* Submit Button */}
             <button
-              type="submit" disabled={loading}
-              style={{ ...styles.btn, opacity: loading ? 0.75 : 1 }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#4f46e5"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#6366f1"; }}
+              type="submit"
+              disabled={loading}
+              style={{
+                ...styles.submitButton,
+                opacity: loading ? 0.75 : 1,
+                cursor: loading ? "not-allowed" : "pointer"
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.currentTarget.style.background = "#5558e3";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#6366f1";
+              }}
             >
-              {loading ? "Signing in…" : "Sign In"}
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          <p style={styles.switchText}>
+          {/* Create Account Link */}
+          <p style={styles.signupText}>
             Don't have an account?{" "}
-            <Link to="/register" style={styles.link}>Create one</Link>
+            <Link to="/register" style={styles.signupLink}>
+              Create an account
+            </Link>
           </p>
+
+          {/* Footer Links */}
+          <div style={styles.footer}>
+            <a
+              href="#"
+              style={styles.footerLink}
+              onMouseEnter={(e) => e.currentTarget.style.color = "#6366f1"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="#"
+              style={styles.footerLink}
+              onMouseEnter={(e) => e.currentTarget.style.color = "#6366f1"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
+            >
+              Terms of Service
+            </a>
+            <a
+              href="#"
+              style={styles.footerLink}
+              onMouseEnter={(e) => e.currentTarget.style.color = "#6366f1"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
+            >
+              Help Center
+            </a>
+          </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
 
-function Field({ label, children }) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 600, color: "#374151", marginBottom: "0.4rem" }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-/* ── Styles ─────────────────────────────────────────────────────────────── */
+/* ── Styles ──────────────────────────────────────────────── */
 const styles = {
-  page: {
-    minHeight: "100vh",
+  container: {
     display: "flex",
-    fontFamily: "Inter, -apple-system, sans-serif",
-  },
-  left: {
-    flex: 1,
-    background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #6366f1 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "3rem 2rem",
-    position: "relative",
+    width: "100%",
+    height: "100vh",
+    fontFamily: "'Inter', sans-serif",
     overflow: "hidden",
   },
-  leftInner: {
+  // Left Hero Section
+  leftSection: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "2rem",
+    overflow: "hidden",
+    background: "#0f172a",
+    position: "relative",
+  },
+  bgOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    opacity: 0.15,
+  },
+  bgCircle1: {
+    position: "absolute",
+    top: "-10%",
+    left: "-10%",
+    width: "50%",
+    height: "50%",
+    borderRadius: "50%",
+    background: "#2dd4bf",
+    filter: "blur(100px)",
+  },
+  bgCircle2: {
+    position: "absolute",
+    bottom: "-10%",
+    right: "-10%",
+    width: "60%",
+    height: "60%",
+    borderRadius: "50%",
+    background: "white",
+    filter: "blur(120px)",
+  },
+  heroContent: {
     position: "relative",
     zIndex: 1,
-    maxWidth: 400,
+    maxWidth: "500px",
     width: "100%",
+    textAlign: "left",
   },
-  brand: {
+  logoContainer: {
     display: "flex",
     alignItems: "center",
-    gap: "0.6rem",
-    marginBottom: "2.25rem",
+    gap: "0.625rem",
+    marginBottom: "1.5rem",
   },
-  brandIcon: { fontSize: "1.5rem" },
-  brandName: {
+  logoBox: {
+    background: "white",
+    padding: "0.4rem",
+    borderRadius: "0.4rem",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+  },
+  logoSvg: {
+    width: "1.5rem",
+    height: "1.5rem",
+    color: "#0f172a",
+  },
+  logoText: {
+    color: "white",
+    fontSize: "1.5rem",
     fontWeight: 800,
-    fontSize: "1.15rem",
-    color: "#fff",
-    letterSpacing: "0.01em",
+    letterSpacing: "-0.025em",
   },
-  tagline: {
-    fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+  heroTitle: {
+    color: "white",
+    fontSize: "2rem",
     fontWeight: 800,
-    color: "#fff",
-    lineHeight: 1.18,
-    letterSpacing: "-0.5px",
-    margin: "0 0 0.85rem",
+    lineHeight: 1.2,
+    marginBottom: "0.875rem",
+    letterSpacing: "-0.025em",
   },
-  taglineSub: {
-    fontSize: "0.92rem",
-    color: "rgba(255,255,255,0.7)",
-    lineHeight: 1.65,
-    margin: "0 0 2.25rem",
+  heroSubtitle: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: "0.9375rem",
+    lineHeight: 1.6,
+    marginBottom: "1.5rem",
+    maxWidth: "26rem",
   },
-  illustration: { width: "100%" },
-  right: {
+  imageContainer: {
     width: "100%",
-    maxWidth: 480,
+    height: "240px",
+    borderRadius: "0.75rem",
+    background: "rgba(255, 255, 255, 0.08)",
+    backdropFilter: "blur(10px)",
+    padding: "0.75rem",
+    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 0 20px rgba(45, 212, 191, 0.2)",
+    overflow: "hidden",
+    border: "1px solid rgba(255, 255, 255, 0.15)",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    borderRadius: "0.5rem",
+    backgroundPosition: "center",
+    backgroundSize: "cover",
+  },
+  // Right Form Section
+  rightSection: {
+    width: "100%",
+    flex: 1,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "2rem 1.5rem",
-    background: "#fff",
+    padding: "1.5rem",
+    background: "#f8fafc",
+    overflow: "auto",
   },
-  card: {
+  formContainer: {
     width: "100%",
-    maxWidth: 380,
+    maxWidth: "420px",
   },
-  formTitle: {
-    fontSize: "1.65rem",
+  mobileLogoContainer: {
+    display: "none",
+    alignItems: "center",
+    gap: "0.5rem",
+    marginBottom: "1.5rem",
+  },
+  mobileLogoSvg: {
+    width: "1.25rem",
+    height: "1.25rem",
+    color: "#6366f1",
+  },
+  mobileLogoText: {
+    color: "#0f172a",
+    fontSize: "1.125rem",
+    fontWeight: 700,
+  },
+  header: {
+    marginBottom: "1.25rem",
+  },
+  title: {
+    fontSize: "1.875rem",
     fontWeight: 800,
-    color: "#111827",
-    letterSpacing: "-0.5px",
-    margin: 0,
+    color: "#0f172a",
+    letterSpacing: "-0.025em",
+    marginBottom: "0.375rem",
+    lineHeight: 1.2,
   },
-  formSub: {
+  subtitle: {
+    color: "#64748b",
     fontSize: "0.875rem",
-    color: "#6b7280",
-    marginTop: "0.35rem",
+    lineHeight: 1.5,
   },
+  // Role Tabs
+  tabsContainer: {
+    display: "flex",
+    background: "rgba(226, 232, 240, 0.5)",
+    padding: "0.25rem",
+    borderRadius: "0.625rem",
+    marginBottom: "1.5rem",
+    border: "1px solid rgba(226, 232, 240, 0.6)",
+  },
+  tabActive: {
+    flex: 1,
+    padding: "0.5rem",
+    fontSize: "0.8125rem",
+    fontWeight: 700,
+    borderRadius: "0.375rem",
+    border: "none",
+    background: "#6366f1",
+    color: "white",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+  },
+  tabInactive: {
+    flex: 1,
+    padding: "0.5rem",
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    borderRadius: "0.375rem",
+    border: "none",
+    background: "transparent",
+    color: "#64748b",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  // Error
   errorBox: {
     display: "flex",
     alignItems: "center",
     gap: "0.5rem",
-    padding: "0.75rem 1rem",
-    borderRadius: 10,
+    padding: "0.75rem 0.875rem",
+    borderRadius: "0.625rem",
     background: "#fef2f2",
     border: "1px solid #fecaca",
-    color: "#b91c1c",
-    fontSize: "0.85rem",
+    color: "#dc2626",
+    fontSize: "0.8125rem",
     fontWeight: 500,
-    marginBottom: "1.1rem",
+    marginBottom: "1rem",
+  },
+  // Form
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  fieldContainer: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  label: {
+    display: "block",
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: "#334155",
+    marginBottom: "0.375rem",
+  },
+  labelRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "0.375rem",
+  },
+  forgotLink: {
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: "#6366f1",
+    textDecoration: "none",
+  },
+  inputWrapper: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  icon: {
+    position: "absolute",
+    left: "0.875rem",
+    fontSize: "1.125rem",
+    color: "#94a3b8",
+    pointerEvents: "none",
   },
   input: {
     width: "100%",
-    padding: "0.72rem 0.95rem",
+    padding: "0.75rem 0.875rem 0.75rem 2.5rem",
+    borderRadius: "0.625rem",
     border: "1.5px solid #e2e8f0",
-    borderRadius: 10,
-    fontSize: "0.925rem",
-    color: "#111827",
-    background: "#fff",
-    fontFamily: "inherit",
-    transition: "border-color 0.15s",
+    background: "white",
+    color: "#0f172a",
+    fontSize: "0.875rem",
     outline: "none",
+    transition: "all 0.2s",
+    fontFamily: "inherit",
     boxSizing: "border-box",
   },
-  btn: {
+  eyeButton: {
+    position: "absolute",
+    right: "0.875rem",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "1.125rem",
+    color: "#94a3b8",
+    padding: 0,
+  },
+  submitButton: {
     width: "100%",
-    padding: "0.78rem",
-    borderRadius: 10,
+    padding: "0.75rem",
+    borderRadius: "0.625rem",
     border: "none",
     background: "#6366f1",
-    color: "#fff",
+    color: "white",
+    fontSize: "0.9375rem",
     fontWeight: 700,
-    fontSize: "0.95rem",
     cursor: "pointer",
-    transition: "background 0.15s",
-    marginTop: "0.35rem",
+    transition: "all 0.2s",
+    boxShadow: "0 4px 6px -1px rgba(99, 102, 241, 0.15)",
+    marginTop: "0.25rem",
   },
-  switchText: {
+  signupText: {
     textAlign: "center",
     marginTop: "1.5rem",
+    color: "#475569",
+    fontWeight: 500,
     fontSize: "0.875rem",
-    color: "#6b7280",
   },
-  link: {
+  signupLink: {
+    fontSize: "0.875rem",
+    fontWeight: 700,
     color: "#6366f1",
-    fontWeight: 600,
     textDecoration: "none",
+  },
+  footer: {
+    marginTop: "1.5rem",
+    display: "flex",
+    justifyContent: "center",
+    gap: "1.25rem",
+  },
+  footerLink: {
+    fontSize: "0.6875rem",
+    color: "#94a3b8",
+    textDecoration: "none",
+    transition: "color 0.2s",
   },
 };
