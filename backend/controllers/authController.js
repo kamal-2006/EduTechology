@@ -38,8 +38,8 @@ const register = async (req, res) => {
         .json({ success: false, message: "Email already registered." });
     }
 
-    // Only allow 'student' self-registration; admin must be set manually / via seed
-    const safeRole = role === "admin" ? "student" : (role || "student");
+    // Allow student and faculty self-registration; admin must be set manually / via seed
+    const safeRole = ["student", "faculty"].includes(role) ? role : "student";
 
     const user  = await User.create({ name, email, password, role: safeRole });
     const token = signToken(user._id);

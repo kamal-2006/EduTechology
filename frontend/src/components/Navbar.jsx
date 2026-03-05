@@ -23,7 +23,7 @@ export default function Navbar() {
             <Link to="/">Dashboard</Link>
             <Link to="/courses">Courses</Link>
             <Link to={`/analytics/${user.id}`}>Analytics</Link>
-            {user.role === "admin" && (
+            {["admin","faculty"].includes(user.role) && (
               <Link to="/analytics/admin">Admin</Link>
             )}
             <span className="navbar-role-badge">{user.role}</span>

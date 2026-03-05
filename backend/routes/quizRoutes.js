@@ -14,7 +14,7 @@ router.get("/:courseId",          protect, getQuizByCourse);
 router.get("/detail/:quizId",     protect, getQuizById);
 router.post("/submit",            protect, submitQuiz);
 
-// Admin only
-router.post("/",                  protect, authorise("admin"), createQuiz);
+// Admin / Faculty only
+router.post("/",                  protect, authorise("admin", "faculty"), createQuiz);
 
 module.exports = router;

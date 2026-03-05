@@ -17,7 +17,7 @@ router.get("/check/:courseId",                  protect, checkEnrollment);
 router.delete("/:courseId",                     protect, unenroll);
 router.patch("/:courseId/complete-level",       protect, completeLevel);
 
-// Admin route
-router.get("/admin",  protect, authorise("admin"), getAllEnrollments);
+// Admin / Faculty route
+router.get("/admin",  protect, authorise("admin", "faculty"), getAllEnrollments);
 
 module.exports = router;

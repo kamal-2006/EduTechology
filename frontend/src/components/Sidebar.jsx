@@ -125,7 +125,7 @@ export default function Sidebar() {
             Dashboard
           </NavLink>
 
-          {user.role === "admin" && (
+          {["admin","faculty"].includes(user.role) && (
             <NavLink to="/courses/create">
               <Icon.Plus />
               Create Course
@@ -152,7 +152,7 @@ export default function Sidebar() {
             My Analytics
           </NavLink>
 
-          {user.role === "admin" && (
+          {["admin","faculty"].includes(user.role) && (
             <NavLink to="/analytics/admin">
               <Icon.Admin />
               Admin Analytics

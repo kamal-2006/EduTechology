@@ -28,7 +28,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (user.role === "admin") {
+        if (["admin","faculty"].includes(user.role)) {
           const aRes = await analyticsAPI.getAdminAnalytics();
           setAnalytics(aRes.data.data);
         } else {
@@ -57,7 +57,7 @@ export default function Dashboard() {
   if (error) return (
     <div className="page"><div className="alert alert-error">{error}</div></div>
   );
-  if (user.role === "admin") return <AdminDashboard analytics={analytics} />;
+  if (["admin","faculty"].includes(user.role)) return <AdminDashboard analytics={analytics} />;
 
   const recentActivity = (analytics?.scoreHistory || []).slice(-5).reverse();
   const perfColor = analytics?.predictedPerformance === "High"

@@ -19,7 +19,7 @@ router.get("/course-status/:courseId",                protect, getCourseStatus);
 router.post("/submit-quiz",                           protect, submitLevelQuiz);
 router.get("/attempts/:courseId/:levelNumber",        protect, getAttemptHistory);
 
-// Admin route
-router.get("/admin/all", protect, authorise("admin"), getAllRegistrations);
+// Admin / Faculty route
+router.get("/admin/all", protect, authorise("admin", "faculty"), getAllRegistrations);
 
 module.exports = router;

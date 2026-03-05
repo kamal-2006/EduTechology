@@ -36,7 +36,7 @@ export default function CoursePage() {
 
   const raw     = localStorage.getItem("user");
   const user    = raw ? JSON.parse(raw) : {};
-  const isAdmin = user.role === "admin";
+  const isAdmin = ["admin","faculty"].includes(user.role);
 
   const [courseForm,    setCourseForm]    = useState({ title: "", description: "", difficulty: "Beginner" });
   const [courseLoading, setCourseLoading] = useState(false);
