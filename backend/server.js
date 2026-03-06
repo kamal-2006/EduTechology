@@ -12,6 +12,7 @@ const analyticsRoutes          = require("./routes/analyticsRoutes");
 const enrollmentRoutes         = require("./routes/enrollmentRoutes");
 const levelRegistrationRoutes  = require("./routes/levelRegistrationRoutes");
 const recommendationRoutes     = require("./routes/recommendationRoutes");
+const aiRoutes                 = require("./routes/aiRoutes");
 
 // ── Connect Database ───────────────────────────────────────────────────────────
 connectDB();
@@ -32,6 +33,17 @@ app.use("/api/analytics",         analyticsRoutes);
 app.use("/api/enrollments",       enrollmentRoutes);
 app.use("/api/level-reg",         levelRegistrationRoutes);
 app.use("/api/recommendations",   recommendationRoutes);
+app.use("/api/ai",                aiRoutes);
+
+// ── Non-blocking: build RAG embeddings index on first startup ────────────────
+setTimeout(async () => {
+  try {
+    const { indexCoursesIfNeeded } = require("./controllers/aiController");
+    await indexCoursesIfNeeded();
+  } catch (err) {
+    console.warn("[AI] Startup indexing skipped:", err.message);
+  }
+}, 8000); // wait 8s after boot so DB connection is settled
 
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get("/api/health", (_, res) =>

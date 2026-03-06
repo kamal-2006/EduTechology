@@ -88,4 +88,11 @@ export const recommendationAPI = {
   refresh:       (studentId) => api.post("/recommendations/refresh", studentId ? { studentId } : {}),
 };
 
+// ── AI Chatbot ────────────────────────────────────────────────────────────────────
+export const aiAPI = {
+  // message: string, history: [{role, content}][]
+  chat:    (message, history = []) => api.post("/ai/chat", { message, history }),
+  reindex: ()                       => api.post("/ai/reindex"),
+};
+
 export default api;

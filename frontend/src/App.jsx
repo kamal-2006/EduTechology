@@ -16,6 +16,7 @@ import CreateCourse   from "./pages/CreateCourse.jsx";
 import CreateQuiz     from "./pages/CreateQuiz.jsx";
 import EditCourse     from "./pages/EditCourse.jsx";
 import EditQuiz       from "./pages/EditQuiz.jsx";
+import ChatbotWidget  from "./components/ChatbotWidget.jsx";
 
 /* Shared auth context so pages can read current user without prop-drilling */
 export const AuthContext = createContext({ user: null, setUser: () => {} });
@@ -49,6 +50,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ChatbotWidget />
         <Routes>
         {/* Public – no sidebar */}
         <Route path="/login"    element={<Login />} />
