@@ -29,6 +29,7 @@ const quizSchema = new mongoose.Schema(
     },
     totalMarks:   { type: Number, default: 100 },
     levelNumber:  { type: Number, default: null },   // null = general course quiz
+    timeLimit:    { type: Number, default: null },   // minutes; null = no limit
   },
   { timestamps: true }
 );

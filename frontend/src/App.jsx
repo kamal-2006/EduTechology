@@ -12,6 +12,8 @@ import Students       from "./pages/Students.jsx";
 import MyCourses      from "./pages/MyCourses.jsx";
 import LevelPage      from "./pages/LevelPage.jsx";
 import StudentDetails from "./pages/StudentDetails.jsx";
+import CreateCourse   from "./pages/CreateCourse.jsx";
+import CreateQuiz     from "./pages/CreateQuiz.jsx";
 
 /* Shared auth context so pages can read current user without prop-drilling */
 export const AuthContext = createContext({ user: null, setUser: () => {} });
@@ -56,6 +58,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AppShell><Dashboard /></AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/courses/create"
+          element={
+            <ProtectedRoute roles={["admin","faculty"]}>
+              <AppShell><CreateCourse /></AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quiz/create"
+          element={
+            <ProtectedRoute roles={["admin","faculty"]}>
+              <AppShell><CreateQuiz /></AppShell>
             </ProtectedRoute>
           }
         />

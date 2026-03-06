@@ -11,6 +11,22 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: [true, "Course description is required"],
     },
+    category: {
+      type: String,
+      enum: [
+        "Programming",
+        "Data Science",
+        "Machine Learning",
+        "Web Development",
+        "Database",
+        "Cybersecurity",
+        "Cloud Computing",
+        "Mobile Development",
+        "Mathematics",
+        "Other",
+      ],
+      default: "Other",
+    },
     difficulty: {
       type: String,
       enum: ["Beginner", "Intermediate", "Advanced"],
@@ -23,6 +39,11 @@ const courseSchema = new mongoose.Schema(
     topics: {
       type:    [String],
       default: [],
+    },
+    maxAttempts: {
+      type:    Number,
+      default: 3,
+      min:     1,
     },
     levels: [
       {

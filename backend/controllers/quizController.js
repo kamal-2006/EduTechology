@@ -57,19 +57,130 @@ const getQuizById = async (req, res) => {
   }
 };
 
-// ── POST /api/quiz – Admin only ───────────────────────────────────────────────
+// ── POST /api/quiz – Admin / Faculty ─────────────────────────────────────────
 const createQuiz = async (req, res) => {
   try {
-    const { courseId, title, questions, totalMarks } = req.body;
+    const { courseId, title, questions, totalMarks, levelNumber, timeLimit } = req.body;
     if (!courseId || !title || !questions || questions.length === 0) {
       return res
         .status(400)
         .json({ success: false, message: "courseId, title, and questions are required." });
     }
-    const quiz = await Quiz.create({ courseId, title, questions, totalMarks });
+    const quiz = await Quiz.create({
+      courseId,
+      title,
+      questions,
+      totalMarks:  totalMarks  ?? 100,
+      levelNumber: levelNumber != null ? Number(levelNumber) : null,
+      timeLimit:   timeLimit   ? Number(timeLimit) : null,
+    });
     res.status(201).json({ success: true, data: quiz });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ── Helpers for file parsing ──────────────────────────────────────────────────
+
+/** Parse a single CSV line, respecting double-quoted fields. */
+function parseCSVLine(line) {
+  const result = [];
+  let current  = "";
+  let inQuotes = false;
+  for (const ch of line) {
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === "," && !inQuotes) { result.push(current.trim()); current = ""; }
+    else { current += ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+/**
+ * Normalise a raw row object (from JSON, CSV, or Excel) into the question schema shape.
+ * Accepts flexible column names / JSON shapes.
+ */
+function normalizeQuestion(q) {
+  const questionText =
+    (q.questionText || q.question || q.Question || q["Question Text"] || "").toString().trim();
+
+  let options = [];
+  if (Array.isArray(q.options)) {
+    options = q.options.map((o) => String(o).trim()).filter(Boolean);
+  } else {
+    // Accept option1…option6, opt1…opt6, Option 1, A/B/C/D columns, etc.
+    const optKeys = Object.keys(q)
+      .filter((k) => /^(option|opt)[\s]?[1-9]/i.test(k))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    options = optKeys.map((k) => String(q[k]).trim()).filter(Boolean);
+  }
+
+  const correctAnswer = (
+    q.correctAnswer || q.correct || q.answer ||
+    q["Correct Answer"] || q.Answer || ""
+  ).toString().trim();
+
+  return { questionText, options, correctAnswer };
+}
+
+// ── POST /api/quiz/parse-file – Admin / Faculty ───────────────────────────────
+// Route is protected: only authenticated admin/faculty can upload files here.
+const parseQuizFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded." });
+    }
+
+    const originalName = req.file.originalname || "";
+    const ext = originalName.slice(originalName.lastIndexOf(".")).toLowerCase();
+    let questions = [];
+
+    if (ext === ".json") {
+      const raw  = req.file.buffer.toString("utf-8");
+      const data = JSON.parse(raw);
+      const arr  = Array.isArray(data) ? data : (data.questions || []);
+      questions  = arr.map(normalizeQuestion).filter((q) => q.questionText);
+
+    } else if (ext === ".csv") {
+      const lines = req.file.buffer
+        .toString("utf-8")
+        .replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+        .trim().split("\n").filter(Boolean);
+      if (lines.length < 2) {
+        throw new Error("CSV must have a header row and at least one data row.");
+      }
+      const headers = parseCSVLine(lines[0]).map((h) => h.trim());
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i]);
+        const row  = {};
+        headers.forEach((h, idx) => { row[h] = cols[idx] ?? ""; });
+        const q = normalizeQuestion(row);
+        if (q.questionText) questions.push(q);
+      }
+
+    } else if (ext === ".xlsx" || ext === ".xls") {
+      // xlsx package is access-controlled: only authenticated admin/faculty reach this branch.
+      const XLSX = require("xlsx");
+      const wb   = XLSX.read(req.file.buffer, { type: "buffer" });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      questions  = rows.map(normalizeQuestion).filter((q) => q.questionText);
+
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "Unsupported file type. Use JSON, CSV, or Excel (.xlsx/.xls)." });
+    }
+
+    if (questions.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No valid questions found in the file. Check the format." });
+    }
+
+    res.status(200).json({ success: true, count: questions.length, data: questions });
+  } catch (error) {
+    res.status(400).json({ success: false, message: `File parsing failed: ${error.message}` });
   }
 };
 
@@ -147,5 +258,6 @@ module.exports = {
   getQuizByCourse,
   getQuizById,
   createQuiz,
+  parseQuizFile,
   submitQuiz,
 };

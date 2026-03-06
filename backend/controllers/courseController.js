@@ -30,10 +30,20 @@ const getCourseById = async (req, res) => {
   }
 };
 
-// ── POST /api/courses – Admin only ────────────────────────────────────────────
+// ── POST /api/courses – Admin / Faculty ──────────────────────────────────────
 const createCourse = async (req, res) => {
   try {
-    const { title, description, difficulty, lessons } = req.body;
+    const {
+      title,
+      description,
+      category,
+      difficulty,
+      image,
+      topics,
+      maxAttempts,
+      levels,
+      lessons,
+    } = req.body;
 
     if (!title || !description) {
       return res
@@ -44,9 +54,14 @@ const createCourse = async (req, res) => {
     const course = await Course.create({
       title,
       description,
-      difficulty: difficulty || "Beginner",
-      lessons:    lessons    || [],
-      createdBy:  req.user._id,
+      category:    category    || "Other",
+      difficulty:  difficulty  || "Beginner",
+      image:       image       || "",
+      topics:      Array.isArray(topics)  ? topics  : [],
+      maxAttempts: maxAttempts || 3,
+      levels:      Array.isArray(levels)  ? levels  : [],
+      lessons:     Array.isArray(lessons) ? lessons : [],
+      createdBy:   req.user._id,
     });
 
     res.status(201).json({ success: true, data: course });

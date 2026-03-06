@@ -54,6 +54,13 @@ const Icon = {
       <line x1="5" y1="12" x2="19" y2="12"/>
     </svg>
   ),
+  Quiz: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  ),
   Students: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
@@ -137,6 +144,13 @@ export default function Sidebar() {
             <NavLink to="/courses/create">
               <Icon.Plus />
               Create Course
+            </NavLink>
+          )}
+
+          {["admin","faculty"].includes(user.role) && (
+            <NavLink to="/quiz/create">
+              <Icon.Quiz />
+              Create Quiz
             </NavLink>
           )}
 

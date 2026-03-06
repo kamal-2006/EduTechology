@@ -49,8 +49,10 @@ export const quizAPI = {
   getByCourse: (courseId) => api.get(`/quiz/${courseId}`),
   getById:     (quizId)   => api.get(`/quiz/detail/${quizId}`),
   create:      (data)     => api.post("/quiz", data),
-  submit:      (data)     => api.post("/quiz/submit", data),
-};
+  submit:      (data)     => api.post("/quiz/submit", data),  // FormData upload; let axios set multipart/form-data + boundary automatically
+  parseFile:   (formData) => api.post("/quiz/parse-file", formData, {
+    headers: { "Content-Type": undefined },
+  }),};
 
 // ── Analytics ─────────────────────────────────────────────────────────────────
 export const analyticsAPI = {
