@@ -29,10 +29,12 @@ export default function MyCourses() {
   const loadData = useCallback(async () => {
     try {
       const res = await levelRegAPI.getAllCoursesStatus();
-      const engaged = (res.data.data || []).filter((c) =>
-        c.levelStatuses?.some((ls) => ["active","failed","completed"].includes(ls.status))
+      // Only show courses that have at least one active or failed level
+      // (i.e. genuinely in progress). Fully-completed courses go back to Available Courses.
+      const inProgress = (res.data.data || []).filter((c) =>
+        c.levelStatuses?.some((ls) => ["active", "failed"].includes(ls.status))
       );
-      setCourses(engaged);
+      setCourses(inProgress);
     } catch (err) {
       console.error("Failed to load my courses:", err);
     } finally {
@@ -77,7 +79,7 @@ export default function MyCourses() {
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title">My Courses</h1>
-        <p className="page-subtitle">Track your active learning journey and resume where you left off.</p>
+        <p className="page-subtitle">Courses you are actively working on. Completed courses appear in Available Courses.</p>
       </div>
 
       {courses.length === 0 ? (

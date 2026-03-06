@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { analyticsAPI, levelRegAPI } from "../services/api.js";
+import RecommendationsPanel from "../components/RecommendationsPanel.jsx";
 
 const FALLBACK_BG = [
   "linear-gradient(135deg,#6366f1 0%,#4338ca 100%)",
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const raw  = localStorage.getItem("user");
   const user = raw ? JSON.parse(raw) : {};
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [myCourses, setMyCourses] = useState([]);
   const [analytics, setAnalytics] = useState(null);
@@ -26,6 +28,8 @@ export default function Dashboard() {
   const [error,     setError]     = useState("");
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     const fetchData = async () => {
       try {
         if (["admin","faculty"].includes(user.role)) {
@@ -36,10 +40,12 @@ export default function Dashboard() {
             levelRegAPI.getAllCoursesStatus(),
             analyticsAPI.getStudentAnalytics(user.id),
           ]);
-          const engaged = (csRes.data.data || []).filter((c) =>
-            c.levelStatuses?.some((ls) => ["active", "failed", "completed"].includes(ls.status))
+          // Only show courses with at least one active or failed level.
+          // Fully-completed courses reappear in Available Courses.
+          const inProgress = (csRes.data.data || []).filter((c) =>
+            c.levelStatuses?.some((ls) => ["active", "failed"].includes(ls.status))
           );
-          setMyCourses(engaged);
+          setMyCourses(inProgress);
           setAnalytics(aRes.data.data);
         }
       } catch {
@@ -49,7 +55,7 @@ export default function Dashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [location.key]);
 
   if (loading) return (
     <div className="spinner-wrap"><div className="spinner" /><span>Loading your dashboard…</span></div>
@@ -59,7 +65,6 @@ export default function Dashboard() {
   );
   if (["admin","faculty"].includes(user.role)) return <AdminDashboard analytics={analytics} />;
 
-  const recentActivity = (analytics?.scoreHistory || []).slice(-5).reverse();
   const perfColor = analytics?.predictedPerformance === "High"
     ? "success" : analytics?.predictedPerformance === "Low" ? "danger" : "info";
 
@@ -169,43 +174,17 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Recent Activity ────────────────────────────────────────────── */}
-      {recentActivity.length > 0 && (
-        <section style={{ marginTop: "2rem" }}>
-          <h2 className="section-title">Recent Activity</h2>
-          <div style={{ background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 14, overflow: "hidden", boxShadow: "var(--shadow-xs)" }}>
-            {recentActivity.map((item, idx) => (
-              <div key={idx} style={{
-                display: "flex", alignItems: "center", gap: "0.85rem",
-                padding: "0.85rem 1.25rem",
-                borderBottom: idx < recentActivity.length - 1 ? "1px solid var(--border)" : "none",
-              }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem",
-                  background: item.score >= 60 ? "#dcfce7" : "#fee2e2",
-                }}>
-                  {item.score >= 60 ? "✅" : "📝"}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.course || "Unknown Course"}
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                    {item.date ? new Date(item.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
-                  </div>
-                </div>
-                <span style={{
-                  padding: "3px 12px", borderRadius: 999, fontSize: "0.78rem", fontWeight: 700,
-                  background: item.score >= 60 ? "#dcfce7" : "#fee2e2",
-                  color: item.score >= 60 ? "#15803d" : "#b91c1c",
-                  flexShrink: 0,
-                }}>{item.score}%</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ── AI Recommendations ─────────────────────────────────────────── */}
+      <section style={{ marginTop: "2rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+          <h2 className="section-title" style={{ margin: 0 }}>AI Recommendations</h2>
+          <span style={{
+            padding: "2px 10px", borderRadius: 999, fontSize: "0.65rem", fontWeight: 700,
+            background: "var(--primary-light)", color: "var(--primary)", border: "1px solid #c7d2fe",
+          }}>🤖 Personalised</span>
+        </div>
+        <RecommendationsPanel studentId={user.id} compact />
+      </section>
 
       {/* ── Quick Actions ──────────────────────────────────────────────── */}
       <section style={{ marginTop: "2rem" }}>

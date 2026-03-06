@@ -184,6 +184,26 @@ const parseQuizFile = async (req, res) => {
   }
 };
 
+// ── PUT /api/quiz/:quizId – Admin / Faculty ───────────────────────────────────
+const updateQuiz = async (req, res) => {
+  try {
+    const { title, questions, totalMarks, levelNumber, timeLimit } = req.body;
+    const quiz = await Quiz.findById(req.params.quizId);
+    if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found." });
+
+    if (title       !== undefined) quiz.title       = title;
+    if (totalMarks  !== undefined) quiz.totalMarks  = Number(totalMarks);
+    if (levelNumber !== undefined) quiz.levelNumber = levelNumber != null ? Number(levelNumber) : null;
+    if (timeLimit   !== undefined) quiz.timeLimit   = timeLimit ? Number(timeLimit) : null;
+    if (Array.isArray(questions) && questions.length > 0) quiz.questions = questions;
+
+    await quiz.save();
+    res.status(200).json({ success: true, data: quiz });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ── POST /api/quiz/submit ─────────────────────────────────────────────────────
 const submitQuiz = async (req, res) => {
   try {
@@ -260,4 +280,5 @@ module.exports = {
   createQuiz,
   parseQuizFile,
   submitQuiz,
+  updateQuiz,
 };

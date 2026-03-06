@@ -49,6 +49,7 @@ export const quizAPI = {
   getByCourse: (courseId) => api.get(`/quiz/${courseId}`),
   getById:     (quizId)   => api.get(`/quiz/detail/${quizId}`),
   create:      (data)     => api.post("/quiz", data),
+  update:      (quizId, data) => api.put(`/quiz/${quizId}`, data),
   submit:      (data)     => api.post("/quiz/submit", data),  // FormData upload; let axios set multipart/form-data + boundary automatically
   parseFile:   (formData) => api.post("/quiz/parse-file", formData, {
     headers: { "Content-Type": undefined },
@@ -79,6 +80,12 @@ export const levelRegAPI = {
   submitQuiz:          (courseId, levelNumber, answers, timeTaken) => api.post("/level-reg/submit-quiz", { courseId, levelNumber, answers, timeTaken }),
   getAttemptHistory:   (courseId, levelNumber)                   => api.get(`/level-reg/attempts/${courseId}/${levelNumber}`),
   getAllRegistrations:  ()                                        => api.get("/level-reg/admin/all"),
+};
+
+// ── Recommendations ───────────────────────────────────────────────────────────
+export const recommendationAPI = {
+  getForStudent: (studentId) => api.get(`/recommendations/${studentId}`),
+  refresh:       (studentId) => api.post("/recommendations/refresh", studentId ? { studentId } : {}),
 };
 
 export default api;

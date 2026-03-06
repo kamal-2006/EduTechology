@@ -7,6 +7,7 @@ const {
   createQuiz,
   parseQuizFile,
   submitQuiz,
+  updateQuiz,
 } = require("../controllers/quizController");
 const { protect, authorise } = require("../middleware/authMiddleware");
 
@@ -33,6 +34,7 @@ router.post("/submit",            protect, submitQuiz);
 
 // Admin / Faculty only
 router.post("/",                  protect, authorise("admin", "faculty"), createQuiz);
+router.put("/:quizId",            protect, authorise("admin", "faculty"), updateQuiz);
 router.post(
   "/parse-file",
   protect,

@@ -11,6 +11,7 @@ const quizRoutes     = require("./routes/quizRoutes");
 const analyticsRoutes          = require("./routes/analyticsRoutes");
 const enrollmentRoutes         = require("./routes/enrollmentRoutes");
 const levelRegistrationRoutes  = require("./routes/levelRegistrationRoutes");
+const recommendationRoutes     = require("./routes/recommendationRoutes");
 
 // ── Connect Database ───────────────────────────────────────────────────────────
 connectDB();
@@ -30,6 +31,7 @@ app.use("/api/quiz",      quizRoutes);
 app.use("/api/analytics",         analyticsRoutes);
 app.use("/api/enrollments",       enrollmentRoutes);
 app.use("/api/level-reg",         levelRegistrationRoutes);
+app.use("/api/recommendations",   recommendationRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get("/api/health", (_, res) =>

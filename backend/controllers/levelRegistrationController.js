@@ -2,6 +2,7 @@ const Course            = require("../models/Course");
 const Quiz              = require("../models/Quiz");
 const LevelRegistration = require("../models/LevelRegistration");
 const AttemptHistory    = require("../models/AttemptHistory");
+const { buildRecommendations } = require("./recommendationController");
 
 const PASS_THRESHOLD = 60; // %
 
@@ -192,6 +193,11 @@ const submitLevelQuiz = async (req, res) => {
     reg.status = passed ? "completed" : "failed";
     if (passed) reg.completedAt = new Date();
     await reg.save();
+
+    // ── Async: regenerate AI recommendations (non-blocking) ────────────────
+    buildRecommendations(studentId).catch((err) =>
+      console.warn("[recommendationEngine] Failed to update recommendations:", err.message)
+    );
 
     res.status(200).json({
       success: true,

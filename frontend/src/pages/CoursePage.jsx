@@ -179,9 +179,24 @@ export default function CoursePage() {
           ← Back
         </button>
 
+        {/* Edit Course button (admin/faculty only) */}
+        {isAdmin && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate(`/courses/edit/${id}`)}
+            style={{
+              position: "absolute", top: "1rem", right: "1rem",
+              background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)",
+              color: "#fff", border: "1.5px solid rgba(255,255,255,0.25)",
+            }}
+          >
+            ✏️ Edit Course
+          </button>
+        )}
+
         {/* Difficulty badge */}
         <span style={{
-          position: "absolute", top: "1rem", right: "1rem",
+          position: "absolute", top: isAdmin ? "3.5rem" : "1rem", right: "1rem",
           padding: "4px 14px", borderRadius: 999, fontSize: "0.75rem", fontWeight: 700,
           background: dc.bg, color: dc.color,
         }}>{course.difficulty}</span>
@@ -424,10 +439,17 @@ export default function CoursePage() {
                   <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
                     {quiz.questions?.length ?? 0} questions · {quiz.totalMarks} marks
                   </p>
-                  <Link to={`/quiz/${quiz._id}?courseId=${course._id}`}
-                    className="btn btn-primary btn-sm" style={{ alignSelf: "flex-start" }}>
-                    Preview →
-                  </Link>
+                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                    <Link to={`/quiz/${quiz._id}?courseId=${course._id}`}
+                      className="btn btn-primary btn-sm" style={{ alignSelf: "flex-start" }}>
+                      Preview →
+                    </Link>
+                    <button className="btn btn-outline btn-sm"
+                      onClick={() => navigate(`/quiz/edit/${quiz._id}`)}
+                      style={{ alignSelf: "flex-start" }}>
+                      ✏️ Edit
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

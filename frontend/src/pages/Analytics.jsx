@@ -1,10 +1,11 @@
 ﻿import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
   BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, LabelList,
 } from "recharts";
 import { analyticsAPI, enrollmentAPI, levelRegAPI } from "../services/api.js";
+import RecommendationsPanel from "../components/RecommendationsPanel.jsx";
 
 const PIE_COLORS = { High: "#10b981", Medium: "#f59e0b", Low: "#ef4444" };
 const PASS_SCORE = 60;
@@ -20,6 +21,7 @@ const CHART_TOOLTIP = {
 
 export default function Analytics() {
   const { id } = useParams();
+  const location = useLocation();
   const raw    = localStorage.getItem("user");
   const user   = raw ? JSON.parse(raw) : {};
   const isAdmin = id === "admin";
@@ -29,6 +31,8 @@ export default function Analytics() {
   const [error,   setError]   = useState("");
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
     const fetch = async () => {
       try {
         const res = isAdmin
@@ -42,7 +46,7 @@ export default function Analytics() {
       }
     };
     fetch();
-  }, [id]);
+  }, [id, location.key]);
 
   if (loading) return <div className="spinner-wrap"><div className="spinner" /><span>Loading analytics…</span></div>;
   if (error)   return <div className="page"><div className="alert alert-error">{error}</div></div>;
@@ -50,11 +54,11 @@ export default function Analytics() {
 
   return isAdmin
     ? <AdminAnalytics data={data} />
-    : <StudentAnalytics data={data} studentName={user?.name} />;
+    : <StudentAnalytics data={data} studentName={user?.name} studentId={id} />;
 }
 
 /* ──────────────────────── STUDENT ANALYTICS ─────────────────────────────── */
-function StudentAnalytics({ data, studentName }) {
+function StudentAnalytics({ data, studentName, studentId }) {
   const scoreHistory = (data.scoreHistory || []).map((s, i) => ({
     name:  `#${i + 1}`,
     score: s.score,
@@ -106,6 +110,20 @@ function StudentAnalytics({ data, studentName }) {
         <AStatCard icon="🤖" label="AI Prediction"      value={data.predictedPerformance} color={performanceColor} />
         <AStatCard icon="⚠️" label="Dropout Risk"       value={data.dropoutRisk}       color={riskColor} />
       </div>
+
+      {/* AI Recommendations */}
+      <section style={{ marginBottom: "2rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            🤖 AI Recommendations
+          </h2>
+          <span style={{
+            padding: "2px 10px", borderRadius: 999, fontSize: "0.65rem", fontWeight: 700,
+            background: "var(--primary-light)", color: "var(--primary)", border: "1px solid #c7d2fe",
+          }}>Personalised</span>
+        </div>
+        <RecommendationsPanel studentId={studentId} />
+      </section>
 
       {scoreHistory.length === 0 ? (
         <div className="empty-state">
