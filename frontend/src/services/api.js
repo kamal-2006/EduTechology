@@ -91,8 +91,9 @@ export const recommendationAPI = {
 // ── AI Chatbot ────────────────────────────────────────────────────────────────────
 export const aiAPI = {
   // message: string, history: [{role, content}][]
-  chat:    (message, history = []) => api.post("/ai/chat", { message, history }),
-  reindex: ()                       => api.post("/ai/reindex"),
+  chat:         (message, history = []) => api.post("/ai/chat", { message, history }),
+  reindex:      ()                      => api.post("/ai/reindex"),
+  generateQuiz: (data)                  => api.post("/ai/generate-quiz", data),
 };
 
 export default api;

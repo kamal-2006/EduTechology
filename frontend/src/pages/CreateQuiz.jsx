@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { courseAPI, quizAPI } from "../services/api.js";
+import { courseAPI, quizAPI, aiAPI } from "../services/api.js";
 
 /* ── Constants ────────────────────────────────────────────────────────────── */
 const STEPS = [
@@ -380,6 +380,27 @@ export default function CreateQuiz() {
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState("");
 
+  // AI Generation state
+  const [aiMode,      setAiMode]      = useState(false);
+  const [generating,  setGenerating]  = useState(false);
+  const [aiInputs, setAiInputs] = useState({
+    concepts:          "",
+    paragraph:         "",
+    numberOfQuestions: 5,
+    difficulty:        "Medium",
+  });
+
+  // Reset AI form when switching modes
+  const resetAiForm = () => {
+    setAiInputs({
+      concepts:          "",
+      paragraph:         "",
+      numberOfQuestions: 5,
+      difficulty:        "Medium",
+    });
+    setError("");
+  };
+
   const [setup, setSetup] = useState({
     courseId:    "",
     levelNumber: "",    // "" = general (no level), otherwise a number string
@@ -445,6 +466,79 @@ export default function CreateQuiz() {
     const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
   };
+
+  /* ── AI Generation ─────────────────────────────────────────────────────── */
+  const handleAIGenerate = async () => {
+    setGenerating(true);
+    setError("");
+    try {
+      // Validate inputs
+      const cleanConcepts = (aiInputs.concepts || "").trim();
+      const cleanParagraph = (aiInputs.paragraph || "").trim();
+      
+      if (!cleanConcepts && !cleanParagraph) {
+        setError("Please provide either concepts or a paragraph/topic.");
+        setGenerating(false);
+        return;
+      }
+
+      console.log("Sending AI request:", {
+        concepts: cleanConcepts,
+        paragraph: cleanParagraph,
+        numberOfQuestions: Number(aiInputs.numberOfQuestions),
+        difficulty: aiInputs.difficulty,
+      });
+
+      // Call AI API
+      const res = await aiAPI.generateQuiz({
+        concepts:          cleanConcepts,
+        paragraph:         cleanParagraph,
+        numberOfQuestions: Number(aiInputs.numberOfQuestions),
+        difficulty:        aiInputs.difficulty,
+      });
+
+      const aiQuestions = (res.data.data.questions || []).map(q => ({
+        _key:         uid(),
+        questionText: q.question,
+        options:      [q.optionA, q.optionB, q.optionC, q.optionD],
+        correctIndex: ["A", "B", "C", "D"].indexOf(q.correctAnswer),
+      }));
+
+      if (aiQuestions.length === 0) {
+        setError("No questions were generated. Please try again.");
+        return;
+      }
+
+      // Ask user if they want to replace or append
+      const merge = questions.length === 1 && !questions[0].questionText.trim()
+        ? true
+        : window.confirm(
+            `${aiQuestions.length} question${aiQuestions.length !== 1 ? "s" : ""} generated.\n\nReplace existing questions or add to the current list?`
+          );
+
+      setQuestions(merge || questions.length === 0 ? aiQuestions : [...questions, ...aiQuestions]);
+      
+      // Switch to manual view so user can review / edit
+      setAiMode(false);
+      setUploadMode(false);
+      
+      // Reset AI inputs
+      setAiInputs({
+        concepts:          "",
+        paragraph:         "",
+        numberOfQuestions: 5,
+        difficulty:        "Medium",
+      });
+
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to generate quiz questions. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const setAiField = (field) => (e) =>
+    setAiInputs((prev) => ({ ...prev, [field]: e.target.value }));
 
   /* ── Validation ────────────────────────────────────────────────────────── */
   const validateStep = () => {
@@ -599,33 +693,161 @@ export default function CreateQuiz() {
   /* ── Step 1: Questions ─────────────────────────────────────────────────── */
   const renderQuestions = () => (
     <div>
-      {/* Tab bar: Manual / Upload */}
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+      {/* Tab bar: Manual / Upload / AI */}
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
         {[
-          { id: false, icon: "✏️", label: "Manual Entry" },
-          { id: true,  icon: "📁", label: "Upload File" },
-        ].map((tab) => (
-          <button
-            key={String(tab.id)}
-            type="button"
-            onClick={() => { setUploadMode(tab.id); setError(""); }}
-            style={{
-              display: "flex", alignItems: "center", gap: "0.4rem",
-              padding: "0.55rem 1.1rem", borderRadius: 9,
-              border: `1.5px solid ${uploadMode === tab.id ? "var(--primary)" : "var(--border)"}`,
-              background: uploadMode === tab.id ? "var(--primary)" : "var(--surface)",
-              color: uploadMode === tab.id ? "#fff" : "var(--text-muted)",
-              fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-            }}>
-            <span>{tab.icon}</span>{tab.label}
-          </button>
-        ))}
+          { id: "manual", icon: "✏️", label: "Manual Entry" },
+          { id: "upload", icon: "📁", label: "Upload File" },
+          { id: "ai",     icon: "🤖", label: "Generate with AI" },
+        ].map((tab) => {
+          const isActive = (tab.id === "manual" && !uploadMode && !aiMode) ||
+                          (tab.id === "upload" && uploadMode) ||
+                          (tab.id === "ai" && aiMode);
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => { 
+                setUploadMode(tab.id === "upload"); 
+                setAiMode(tab.id === "ai");
+                setError("");
+                // Reset AI form when switching away from AI mode
+                if (tab.id !== "ai") {
+                  resetAiForm();
+                }
+              }}
+              style={{
+                display: "flex", alignItems: "center", gap: "0.4rem",
+                padding: "0.55rem 1.1rem", borderRadius: 9,
+                border: `1.5px solid ${isActive ? "var(--primary)" : "var(--border)"}`,
+                background: isActive ? "var(--primary)" : "var(--surface)",
+                color: isActive ? "#fff" : "var(--text-muted)",
+                fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+              }}>
+              <span>{tab.icon}</span>{tab.label}
+            </button>
+          );
+        })}
         <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", fontSize: "0.8rem", color: "var(--text-muted)" }}>
           {questions.length} question{questions.length !== 1 ? "s" : ""} added
         </span>
       </div>
 
-      {uploadMode ? (
+      {aiMode ? (
+        /* ─── AI Generation tab ───────────────────────────────────────────── */
+        <div style={cardStyle}>
+          <h3 style={{ margin: "0 0 1rem", fontSize: "0.95rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            🤖 Generate Quiz with AI
+          </h3>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "1.5rem" }}>
+            Let AI create quiz questions based on concepts or a topic paragraph.
+          </p>
+
+          {/* Concepts input */}
+          <Field label="Concepts (comma separated)" hint="e.g., Python loops, Functions, Data structures">
+            <input
+              style={inputStyle}
+              placeholder="Enter concepts separated by commas..."
+              value={aiInputs.concepts}
+              onChange={setAiField("concepts")}
+              onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+              onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
+              disabled={generating}
+            />
+          </Field>
+
+          {/* OR divider */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "1rem 0" }}>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+            <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>OR</span>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          </div>
+
+          {/* Paragraph input */}
+          <Field label="Topic / Paragraph" hint="Provide a detailed paragraph or topic description">
+            <textarea
+              style={textareaStyle}
+              placeholder="Enter a topic or paragraph of content..."
+              value={aiInputs.paragraph}
+              onChange={setAiField("paragraph")}
+              onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+              onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
+              disabled={generating}
+            />
+          </Field>
+
+          {/* Number of questions & Difficulty in a grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "1rem" }}>
+            <Field label="Number of Questions" required>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                style={inputStyle}
+                value={aiInputs.numberOfQuestions}
+                onChange={setAiField("numberOfQuestions")}
+                onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+                onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
+                disabled={generating}
+              />
+            </Field>
+
+            <Field label="Difficulty Level" required>
+              <select
+                style={selectStyle}
+                value={aiInputs.difficulty}
+                onChange={setAiField("difficulty")}
+                disabled={generating}
+              >
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+            </Field>
+          </div>
+
+          {/* Generate button */}
+          <button
+            type="button"
+            onClick={handleAIGenerate}
+            disabled={generating}
+            style={{
+              ...btnPrimary,
+              width: "100%",
+              marginTop: "1.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              background: generating ? "var(--text-muted)" : "var(--primary)",
+              cursor: generating ? "default" : "pointer",
+            }}
+          >
+            {generating ? (
+              <>
+                <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                Generating questions...
+              </>
+            ) : (
+              <>
+                <span>✨</span>
+                Generate Quiz with AI
+              </>
+            )}
+          </button>
+
+          {questions.length > 0 && (
+            <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "var(--success-lighter)", border: "1.5px solid var(--success-light)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.83rem", color: "var(--success-dark)", fontWeight: 600 }}>
+                ✓ {questions.length} question{questions.length !== 1 ? "s" : ""} ready
+              </span>
+              <button type="button" onClick={() => { setAiMode(false); setUploadMode(false); }} style={{ ...btnPrimary, padding: "0.4rem 1rem", fontSize: "0.8rem", background: "var(--success)" }}>
+                Review Questions →
+              </button>
+            </div>
+          )}
+        </div>
+      ) : uploadMode ? (
         /* ─── File Upload tab ─────────────────────────────────────────────── */
         <div style={cardStyle}>
           <h3 style={{ margin: "0 0 1rem", fontSize: "0.95rem", fontWeight: 700 }}>📁 Upload Quiz File</h3>

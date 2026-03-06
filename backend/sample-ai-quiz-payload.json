@@ -1,0 +1,106 @@
+{
+  "description": "Sample payloads for testing the AI quiz generation endpoint",
+  "endpoint": "POST /api/ai/generate-quiz",
+  "validExamples": [
+    {
+      "name": "Using concepts (comma-separated)",
+      "payload": {
+        "concepts": "Python loops, Functions, Data structures",
+        "paragraph": "",
+        "numberOfQuestions": 5,
+        "difficulty": "Medium"
+      }
+    },
+    {
+      "name": "Using a topic paragraph",
+      "payload": {
+        "concepts": "",
+        "paragraph": "JavaScript is a high-level programming language that supports object-oriented, imperative, and functional programming styles. It is widely used for web development and can run both in browsers and on servers using Node.js. Key concepts include variables, functions, closures, promises, and async/await.",
+        "numberOfQuestions": 3,
+        "difficulty": "Easy"
+      }
+    },
+    {
+      "name": "Hard difficulty with concepts",
+      "payload": {
+        "concepts": "Recursion, Dynamic Programming, Time Complexity Analysis",
+        "paragraph": "",
+        "numberOfQuestions": 7,
+        "difficulty": "Hard"
+      }
+    },
+    {
+      "name": "Using both concepts and paragraph (concepts takes priority)",
+      "payload": {
+        "concepts": "Object-Oriented Programming, Inheritance, Polymorphism",
+        "paragraph": "OOP is a programming paradigm based on objects containing data and code.",
+        "numberOfQuestions": 5,
+        "difficulty": "Medium"
+      }
+    }
+  ],
+  "expectedResponse": {
+    "success": true,
+    "data": {
+      "questions": [
+        {
+          "question": "What is the purpose of a for loop in Python?",
+          "optionA": "To define a function",
+          "optionB": "To iterate over a sequence of elements",
+          "optionC": "To create a class",
+          "optionD": "To handle exceptions",
+          "correctAnswer": "B"
+        }
+      ]
+    }
+  },
+  "validationRules": {
+    "concepts": "String, optional (but either concepts or paragraph required)",
+    "paragraph": "String, optional (but either concepts or paragraph required)",
+    "numberOfQuestions": "Number, required, between 1 and 20",
+    "difficulty": "String, required, must be 'Easy', 'Medium', or 'Hard'"
+  },
+  "errorCases": {
+    "missingInput": {
+      "payload": {
+        "concepts": "",
+        "paragraph": "",
+        "numberOfQuestions": 5,
+        "difficulty": "Medium"
+      },
+      "expectedError": "Please provide either concepts or a paragraph/topic."
+    },
+    "invalidQuestionCount": {
+      "payload": {
+        "concepts": "Python basics",
+        "paragraph": "",
+        "numberOfQuestions": 25,
+        "difficulty": "Medium"
+      },
+      "expectedError": "Number of questions must be between 1 and 20."
+    },
+    "invalidDifficulty": {
+      "payload": {
+        "concepts": "Python basics",
+        "paragraph": "",
+        "numberOfQuestions": 5,
+        "difficulty": "VeryHard"
+      },
+      "expectedError": "Difficulty must be Easy, Medium, or Hard."
+    },
+    "uiTextPollution": {
+      "payload": {
+        "concepts": "← Back Create Quiz Build a quiz manually or import questions from a file.",
+        "paragraph": "",
+        "numberOfQuestions": 5,
+        "difficulty": "Medium"
+      },
+      "expectedError": "Invalid input detected. Please ensure you're entering actual concepts or content, not UI text."
+    }
+  },
+  "testingInstructions": {
+    "withCurl": "curl -X POST http://localhost:5000/api/ai/generate-quiz -H 'Content-Type: application/json' -H 'Authorization: Bearer YOUR_TOKEN' -d '{\"concepts\":\"Python loops, Functions\",\"paragraph\":\"\",\"numberOfQuestions\":5,\"difficulty\":\"Medium\"}'",
+    "withPostman": "1. Create a POST request to http://localhost:5000/api/ai/generate-quiz\n2. Add Authorization header with Bearer token\n3. Set Content-Type to application/json\n4. Use any of the valid example payloads from above",
+    "withFrontend": "Make sure the input fields are empty before typing. If you see UI text appearing in the API request, clear your browser cache or try a different browser."
+  }
+}
