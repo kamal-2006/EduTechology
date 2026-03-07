@@ -40,6 +40,7 @@ const CHART_TOOLTIP = {
   },
   labelStyle: { fontWeight: 700, color: "#5eead4" },
   itemStyle: { color: "rgba(203,213,225,0.85)" },
+  cursor: { fill: "rgba(99,102,241,0.08)", stroke: "rgba(99,102,241,0.15)", strokeWidth: 1 },
 };
 
 /* ── Navbar ─────────────────────────────────────────────────── */

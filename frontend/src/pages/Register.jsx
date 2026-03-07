@@ -212,23 +212,9 @@ export default function Register() {
               ))}
             </div>
 
-            {/* Stats row */}
-            <div style={{ display:"flex", gap:"0.875rem", animation: mounted ? "fadeUp 0.6s 0.3s ease both" : "none" }}>
-              {[["50K+","Active Learners"],["94%","Completion Rate"],["3.2×","Faster Mastery"]].map(([val, label]) => (
-                <div key={label} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"12px", padding:"0.875rem 1rem", flex:1 }}>
-                  <div style={{ color:"#5eead4", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"1.25rem", letterSpacing:"-0.02em" }}>{val}</div>
-                  <div style={{ color:"rgba(148,163,184,0.6)", fontSize:"0.7rem", fontFamily:"'Nunito',sans-serif", marginTop:"0.2rem" }}>{label}</div>
-                </div>
-              ))}
-            </div>
 
             {/* Floating badge */}
-            <div style={{ position:"absolute", bottom:"-3rem", right:"-1rem", animation:"floatBadge 4s ease-in-out infinite" }}>
-              <div style={{ width:"76px", height:"76px", borderRadius:"50%", background:"linear-gradient(135deg,rgba(20,184,166,0.2),rgba(99,102,241,0.2))", border:"1px solid rgba(94,234,212,0.2)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0.15rem" }}>
-                <span style={{ fontSize:"1.25rem" }}>🏆</span>
-                <span style={{ color:"rgba(94,234,212,0.8)", fontSize:"0.5rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.05em" }}>WINNER</span>
-              </div>
-            </div>
+            
           </div>
         </div>
 

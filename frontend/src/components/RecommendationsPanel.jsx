@@ -232,7 +232,7 @@ function RecommendationCard({ rec, meta, onNavigate }) {
             </span>
           )}
         </div>
-        <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text)", lineHeight: 1.5 }}>
+        <p style={{ margin: 0, fontSize: "0.78rem", color: "white", lineHeight: 1.5 }}>
           {rec.message}
         </p>
         {rec.videoUrl && (
