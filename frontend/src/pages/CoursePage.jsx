@@ -2,26 +2,90 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { courseAPI, quizAPI, levelRegAPI } from "../services/api.js";
 
-const DIFF_COLORS = {
-  Beginner:     { bg: "#dcfce7", color: "#15803d", border: "#bbf7d0" },
-  Intermediate: { bg: "#fef9c3", color: "#a16207", border: "#fde68a" },
-  Advanced:     { bg: "#fee2e2", color: "#b91c1c", border: "#fecaca" },
+/* ── Constants ─────────────────────────────────────────────── */
+const DIFF_META = {
+  Beginner:     { color:"#5eead4", bg:"rgba(94,234,212,0.1)",  border:"rgba(94,234,212,0.3)"  },
+  Intermediate: { color:"#fbbf24", bg:"rgba(251,191,36,0.1)",  border:"rgba(251,191,36,0.3)"  },
+  Advanced:     { color:"#f87171", bg:"rgba(248,113,113,0.1)", border:"rgba(248,113,113,0.3)" },
 };
 
 const FALLBACK_BG = [
-  "linear-gradient(135deg,#6366f1 0%,#4338ca 100%)",
-  "linear-gradient(135deg,#0ea5e9 0%,#0369a1 100%)",
-  "linear-gradient(135deg,#10b981 0%,#065f46 100%)",
+  "linear-gradient(135deg,#14b8a6 0%,#6366f1 100%)",
+  "linear-gradient(135deg,#f093fb 0%,#f5576c 100%)",
+  "linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)",
 ];
 
 const STATUS_CFG = {
-  locked:    { label: "Locked",      bg: "#f1f5f9", color: "#64748b", border: "#e2e8f0",  icon: "🔒" },
-  available: { label: "Available",   bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe",  icon: "📖" },
-  active:    { label: "In Progress", bg: "#eef2ff", color: "#4338ca", border: "#c7d2fe",  icon: "⚡" },
-  completed: { label: "Completed",   bg: "#dcfce7", color: "#15803d", border: "#bbf7d0",  icon: "✓"  },
-  failed:    { label: "Failed",      bg: "#fee2e2", color: "#b91c1c", border: "#fecaca",  icon: "✗"  },
+  locked:    { label:"Locked",      bg:"rgba(255,255,255,0.04)", color:"rgba(148,163,184,0.4)", border:"rgba(255,255,255,0.07)", icon:"🔒" },
+  available: { label:"Available",   bg:"rgba(99,102,241,0.1)",   color:"#818cf8",               border:"rgba(99,102,241,0.25)", icon:"📖" },
+  active:    { label:"In Progress", bg:"rgba(94,234,212,0.08)",  color:"#5eead4",               border:"rgba(94,234,212,0.25)", icon:"⚡" },
+  completed: { label:"Completed",   bg:"rgba(94,234,212,0.08)",  color:"#5eead4",               border:"rgba(94,234,212,0.25)", icon:"✓"  },
+  failed:    { label:"Failed",      bg:"rgba(248,113,113,0.08)", color:"#f87171",               border:"rgba(248,113,113,0.25)",icon:"✗"  },
 };
 
+/* ── Styles ─────────────────────────────────────────────────── */
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@300;400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060d1a; font-family: 'Nunito', sans-serif; color: rgba(226,232,240,0.88); }
+  @keyframes spin        { to { transform: rotate(360deg); } }
+  @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes glowPulse   { 0%,100%{box-shadow:0 0 14px rgba(94,234,212,0.2)} 50%{box-shadow:0 0 28px rgba(94,234,212,0.45)} }
+  @keyframes pulse       { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes toastIn     { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:rgba(255,255,255,0.02); }
+  ::-webkit-scrollbar-thumb { background:rgba(94,234,212,0.18); border-radius:999px; }
+  .level-card { transition: all 0.2s; }
+  .level-card:hover:not([data-locked="true"]) { border-color: rgba(94,234,212,0.22) !important; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.3) !important; }
+  .quiz-card  { transition: all 0.2s; }
+  .quiz-card:hover  { border-color: rgba(99,102,241,0.3) !important; transform: translateY(-2px); }
+  .lesson-row { transition: background 0.15s; }
+  .lesson-row:hover { background: rgba(255,255,255,0.04) !important; }
+  .ghost-btn { transition: all 0.15s; }
+  .ghost-btn:hover { background: rgba(255,255,255,0.07) !important; }
+  .primary-btn { transition: all 0.15s; }
+  .primary-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .outline-btn { transition: all 0.15s; }
+  .outline-btn:hover { background: rgba(255,255,255,0.05) !important; }
+`;
+
+const T = {
+  surface: "rgba(255,255,255,0.03)",
+  border:  "rgba(255,255,255,0.08)",
+  text:    "rgba(226,232,240,0.88)",
+  muted:   "rgba(148,163,184,0.5)",
+  teal:    "#5eead4",
+  indigo:  "#6366f1",
+  red:     "#f87171",
+  green:   "#34d399",
+};
+
+/* ── Navbar ─────────────────────────────────────────────────── */
+function Navbar() {
+  return (
+    <div style={{ background:"rgba(6,16,31,0.96)", borderBottom:"1px solid rgba(94,234,212,0.07)", padding:"0 1.75rem", display:"flex", alignItems:"center", height:"60px", position:"sticky", top:0, zIndex:50, backdropFilter:"blur(14px)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:"0.625rem" }}>
+        <div style={{ width:"30px", height:"30px", borderRadius:"8px", background:"linear-gradient(135deg,#14b8a6,#6366f1)", display:"flex", alignItems:"center", justifyContent:"center", animation:"glowPulse 3s ease-in-out infinite" }}>
+          <svg width="17" height="17" fill="none" viewBox="0 0 48 48"><path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z" fill="white"/></svg>
+        </div>
+        <span style={{ color:"white", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"1.0625rem", letterSpacing:"-0.02em" }}>EduAI</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Section Header ─────────────────────────────────────────── */
+function SectionHeader({ icon, title }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"1rem" }}>
+      <span style={{ fontSize:"1rem" }}>{icon}</span>
+      <h2 style={{ fontSize:"0.9375rem", fontWeight:800, color:T.text, margin:0, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>{title}</h2>
+    </div>
+  );
+}
+
+/* ── Main ───────────────────────────────────────────────────── */
 export default function CoursePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,17 +96,12 @@ export default function CoursePage() {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState("");
   const [registering,   setRegistering]   = useState(null);
-  const [regMsg,        setRegMsg]        = useState({ text: "", type: "" });
+  const [regMsg,        setRegMsg]        = useState({ text:"", type:"" });
 
   const raw     = localStorage.getItem("user");
   const user    = raw ? JSON.parse(raw) : {};
   const isAdmin = ["admin","faculty"].includes(user.role);
 
-  const [courseForm,    setCourseForm]    = useState({ title: "", description: "", difficulty: "Beginner" });
-  const [courseLoading, setCourseLoading] = useState(false);
-  const [courseMsg,     setCourseMsg]     = useState("");
-
-  // ── Load data ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (id === "create") { setLoading(false); return; }
     const fetchAll = async () => {
@@ -53,409 +112,301 @@ export default function CoursePage() {
         setCourse(results[0].data.data);
         setQuizzes(results[1].data.data);
         if (!isAdmin) setLevelStatuses(results[2].data.data?.levelStatuses || []);
-      } catch {
-        setError("Failed to load course.");
-      } finally {
-        setLoading(false);
-      }
+      } catch { setError("Failed to load course."); }
+      finally  { setLoading(false); }
     };
     fetchAll();
   }, [id, isAdmin]);
 
-  // ── Level registration ────────────────────────────────────────────────────
   const handleLevelRegister = async (levelNumber) => {
     setRegistering(levelNumber);
-    setRegMsg({ text: "", type: "" });
+    setRegMsg({ text:"", type:"" });
     try {
       await levelRegAPI.registerLevel(id, levelNumber);
       const res = await levelRegAPI.getCourseStatus(id);
       setLevelStatuses(res.data.data?.levelStatuses || []);
-      setRegMsg({ text: `Registered for Level ${levelNumber}!`, type: "success" });
-      setTimeout(() => setRegMsg({ text: "", type: "" }), 3000);
+      setRegMsg({ text:`Registered for Level ${levelNumber}!`, type:"success" });
+      setTimeout(() => setRegMsg({ text:"", type:"" }), 3000);
     } catch (err) {
-      setRegMsg({ text: err.response?.data?.message || "Registration failed.", type: "error" });
-      setTimeout(() => setRegMsg({ text: "", type: "" }), 3500);
-    } finally {
-      setRegistering(null);
-    }
+      setRegMsg({ text: err.response?.data?.message || "Registration failed.", type:"error" });
+      setTimeout(() => setRegMsg({ text:"", type:"" }), 3500);
+    } finally { setRegistering(null); }
   };
 
-  // ── Admin: create course ──────────────────────────────────────────────────
-  const handleCreateCourse = async (e) => {
-    e.preventDefault();
-    setCourseMsg(""); setCourseLoading(true);
-    try {
-      await courseAPI.create(courseForm);
-      setCourseMsg("success");
-      setCourseForm({ title: "", description: "", difficulty: "Beginner" });
-      setTimeout(() => navigate("/"), 1500);
-    } catch (err) {
-      setCourseMsg("error:" + (err.response?.data?.message || "Failed to create course."));
-    } finally {
-      setCourseLoading(false);
-    }
-  };
-
-  // ── States ────────────────────────────────────────────────────────────────
+  /* ── Loading ──────────────────────────────────────────────── */
   if (loading) return (
-    <div className="spinner-wrap"><div className="spinner" /><span>Loading course...</span></div>
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#060d1a", gap:"1rem" }}>
+      <style>{STYLES}</style>
+      <div style={{ width:"40px", height:"40px", border:"3px solid rgba(94,234,212,0.1)", borderTopColor:"#5eead4", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+      <span style={{ color:T.muted, fontSize:"0.875rem", fontFamily:"'Nunito',sans-serif" }}>Loading course…</span>
+    </div>
   );
 
-  if (id === "create" && isAdmin) return (
-    <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Create New Course</h1>
-        <p className="page-subtitle">Add a new course for your students.</p>
-      </div>
-      {courseMsg === "success" && <div className="alert alert-success">✅ Course created! Redirecting...</div>}
-      {courseMsg.startsWith("error:") && <div className="alert alert-error">❌ {courseMsg.slice(6)}</div>}
-      <div className="card" style={{ maxWidth: 580 }}>
-        <form onSubmit={handleCreateCourse}>
-          <div className="form-group">
-            <label>Course Title</label>
-            <input type="text" value={courseForm.title}
-              onChange={(e) => setCourseForm((p) => ({ ...p, title: e.target.value }))}
-              placeholder="e.g. Introduction to Python" required />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea rows={4} value={courseForm.description}
-              onChange={(e) => setCourseForm((p) => ({ ...p, description: e.target.value }))}
-              placeholder="What will students learn in this course?" required />
-          </div>
-          <div className="form-group">
-            <label>Difficulty</label>
-            <select value={courseForm.difficulty}
-              onChange={(e) => setCourseForm((p) => ({ ...p, difficulty: e.target.value }))}>
-              <option>Beginner</option>
-              <option>Intermediate</option>
-              <option>Advanced</option>
-            </select>
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
-            <button className="btn btn-primary" type="submit" disabled={courseLoading}>
-              {courseLoading ? "Creating..." : "Create Course"}
-            </button>
-            <Link to="/" className="btn btn-ghost">Cancel</Link>
-          </div>
-        </form>
+  /* ── Error ────────────────────────────────────────────────── */
+  if (error || (!course && id !== "create")) return (
+    <div style={{ minHeight:"100vh", background:"#060d1a", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <style>{STYLES}</style>
+      <div style={{ padding:"1.25rem 2rem", borderRadius:14, background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.25)", color:T.red, fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:600 }}>
+        ⚠️ {error || "Course not found."}
       </div>
     </div>
   );
 
-  if (error)   return <div className="page"><div className="alert alert-error">{error}</div></div>;
-  if (!course) return <div className="page"><div className="alert alert-error">Course not found.</div></div>;
-
-  const dc          = DIFF_COLORS[course.difficulty] || DIFF_COLORS.Beginner;
-  const totalLevels = course.levels?.length   || 0;
-  const totalLessons= course.lessons?.length  || 0;
-  const doneLevels  = levelStatuses.filter((ls) => ls.status === "completed").length;
-  const pct         = totalLevels > 0 ? Math.round((doneLevels / totalLevels) * 100) : 0;
+  const totalLevels  = course?.levels?.length  || 0;
+  const totalLessons = course?.lessons?.length || 0;
+  const doneLevels   = levelStatuses.filter(ls => ls.status === "completed").length;
+  const pct          = totalLevels > 0 ? Math.round((doneLevels / totalLevels) * 100) : 0;
+  const dm           = DIFF_META[course?.difficulty] || DIFF_META.Beginner;
 
   return (
-    <div className="page">
-      {/* ── Hero banner ──────────────────────────────────────────────────── */}
-      <div style={{
-        borderRadius: 18, overflow: "hidden", marginBottom: "2rem",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-        position: "relative",
-        background: course.image
-          ? `linear-gradient(rgba(15,15,40,0.58), rgba(15,15,40,0.72)), url("${course.image}") center/cover`
-          : FALLBACK_BG[totalLevels % FALLBACK_BG.length],
-        minHeight: 200,
-        display: "flex", flexDirection: "column", justifyContent: "flex-end",
-        padding: "2rem",
-      }}>
-        {/* Back button */}
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={() => navigate(isAdmin ? "/" : "/students")}
-          style={{
-            position: "absolute", top: "1rem", left: "1rem",
-            background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)",
-            color: "#fff", border: "1.5px solid rgba(255,255,255,0.25)",
-          }}
-        >
-          ← Back
-        </button>
+    <div style={{ minHeight:"100vh", background:"#060d1a" }}>
+      <style>{STYLES}</style>
+      <Navbar />
 
-        {/* Edit Course button (admin/faculty only) */}
-        {isAdmin && (
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => navigate(`/courses/edit/${id}`)}
-            style={{
-              position: "absolute", top: "1rem", right: "1rem",
-              background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)",
-              color: "#fff", border: "1.5px solid rgba(255,255,255,0.25)",
-            }}
-          >
-            ✏️ Edit Course
-          </button>
-        )}
+      <div style={{ maxWidth:"1100px", margin:"0 auto", padding:"1.75rem 1.75rem 5rem", animation:"fadeSlideUp 0.45s ease both" }}>
 
-        {/* Difficulty badge */}
-        <span style={{
-          position: "absolute", top: isAdmin ? "3.5rem" : "1rem", right: "1rem",
-          padding: "4px 14px", borderRadius: 999, fontSize: "0.75rem", fontWeight: 700,
-          background: dc.bg, color: dc.color,
-        }}>{course.difficulty}</span>
-
-        {/* Title */}
-        <h1 style={{ margin: 0, fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 800,
-          color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.4)", lineHeight: 1.25 }}>
-          {course.title}
-        </h1>
-
-        {/* Topic chips */}
-        {course.topics?.length > 0 && (
-          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
-            {course.topics.map((t) => (
-              <span key={t} style={{
-                padding: "2px 10px", borderRadius: 999, fontSize: "0.72rem", fontWeight: 500,
-                background: "rgba(255,255,255,0.18)", color: "#e0e7ff",
-              }}>{t}</span>
-            ))}
-          </div>
-        )}
-
-        {/* Stats bar */}
-        <div style={{ display: "flex", gap: "1.25rem", marginTop: "0.9rem", flexWrap: "wrap" }}>
-          {[
-            { icon: "📚", val: `${totalLevels} Level${totalLevels !== 1 ? "s" : ""}` },
-            { icon: "📋", val: `${totalLessons} Lesson${totalLessons !== 1 ? "s" : ""}` },
-            ...(!isAdmin && totalLevels > 0 ? [{ icon: "🎯", val: `${pct}% Complete` }] : []),
-          ].map((s) => (
-            <span key={s.val} style={{ fontSize: "0.82rem", fontWeight: 600,
-              color: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-              {s.icon} {s.val}
-            </span>
-          ))}
-        </div>
-
-        {/* Overall progress bar (students only) */}
-        {!isAdmin && totalLevels > 0 && (
-          <div style={{ marginTop: "1rem" }}>
-            <div style={{ height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 999 }}>
-              <div style={{
-                height: "100%", width: `${pct}%`, borderRadius: 999, transition: "width 0.4s",
-                background: pct === 100 ? "#34d399" : "#818cf8",
-              }} />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Description card */}
-      {course.description && (
-        <div style={{
-          background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 14,
-          padding: "1.25rem 1.5rem", marginBottom: "2rem",
-          boxShadow: "var(--shadow-xs)",
+        {/* ── Hero Banner ───────────────────────────────────── */}
+        <div style={{ borderRadius:20, overflow:"hidden", marginBottom:"1.75rem", position:"relative", minHeight:220, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"2rem",
+          background: course.image
+            ? `linear-gradient(rgba(6,13,26,0.35), rgba(6,13,26,0.78)), url("${course.image}") center/cover`
+            : FALLBACK_BG[totalLevels % FALLBACK_BG.length],
+          boxShadow:"0 8px 40px rgba(0,0,0,0.45)",
         }}>
-          <p style={{ margin: 0, color: "var(--text-muted)", lineHeight: 1.7 }}>{course.description}</p>
-        </div>
-      )}
+          {/* Back */}
+          <button className="ghost-btn" onClick={() => navigate(isAdmin ? "/" : "/students")}
+            style={{ position:"absolute", top:"1rem", left:"1rem", display:"flex", alignItems:"center", gap:"0.35rem", padding:"0.4rem 0.9rem", borderRadius:999, background:"rgba(6,13,26,0.55)", backdropFilter:"blur(8px)", color:"rgba(226,232,240,0.85)", border:"1px solid rgba(255,255,255,0.15)", fontSize:"0.8rem", fontWeight:700, cursor:"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+            ← Back
+          </button>
 
-      {/* ── LEVELS (Student) ─────────────────────────────────────────────── */}
-      {!isAdmin && totalLevels > 0 && (
-        <section style={{ marginBottom: "2.5rem" }}>
-          <h2 style={{
-            fontSize: "1.05rem", fontWeight: 700, color: "var(--text)", margin: "0 0 1rem",
-            display: "flex", alignItems: "center", gap: "0.5rem",
-          }}>
-            <span>📚</span> Course Levels
-          </h2>
+          {/* Edit (admin) */}
+          {isAdmin && (
+            <button className="ghost-btn" onClick={() => navigate(`/courses/edit/${id}`)}
+              style={{ position:"absolute", top:"1rem", right:"1rem", display:"flex", alignItems:"center", gap:"0.35rem", padding:"0.4rem 0.9rem", borderRadius:999, background:"rgba(6,13,26,0.55)", backdropFilter:"blur(8px)", color:"rgba(226,232,240,0.85)", border:"1px solid rgba(255,255,255,0.15)", fontSize:"0.8rem", fontWeight:700, cursor:"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+              ✏️ Edit Course
+            </button>
+          )}
 
-          {regMsg.text && (
-            <div className={`alert alert-${regMsg.type === "success" ? "success" : "error"}`}
-              style={{ marginBottom: "1rem" }}>
-              {regMsg.text}
+          {/* Difficulty badge */}
+          <span style={{ position:"absolute", top: isAdmin ? "3.5rem" : "1rem", right:"1rem", padding:"3px 12px", borderRadius:999, fontSize:"0.72rem", fontWeight:800, fontFamily:"'Plus Jakarta Sans',sans-serif", background:dm.bg, color:dm.color, border:`1px solid ${dm.border}`, backdropFilter:"blur(6px)" }}>
+            {course.difficulty}
+          </span>
+
+          {/* Title */}
+          <h1 style={{ margin:0, fontSize:"clamp(1.3rem,3vw,2rem)", fontWeight:800, color:"white", lineHeight:1.2, fontFamily:"'Plus Jakarta Sans',sans-serif", textShadow:"0 2px 12px rgba(0,0,0,0.5)" }}>
+            {course.title}
+          </h1>
+
+          {/* Topic chips */}
+          {course.topics?.length > 0 && (
+            <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", marginTop:"0.5rem" }}>
+              {course.topics.map(t => (
+                <span key={t} style={{ padding:"2px 10px", borderRadius:999, fontSize:"0.7rem", fontWeight:600, background:"rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.8)", backdropFilter:"blur(4px)", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>{t}</span>
+              ))}
             </div>
           )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-            {course.levels.map((lv) => {
-              const ls       = levelStatuses.find((s) => s.levelNumber === lv.levelNumber);
-              const status   = ls?.status || "locked";
-              const sc       = STATUS_CFG[status] || STATUS_CFG.locked;
-              const isBusy   = registering === lv.levelNumber;
-              const attempts = ls?.attemptCount || 0;
-              const scoreStr = ls?.score != null ? ` · ${ls.score}%` : "";
-              const isLocked = status === "locked";
-
-              return (
-                <div key={lv.levelNumber} style={{
-                  display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap",
-                  background: "var(--surface)", border: `1.5px solid ${sc.border}`,
-                  borderRadius: 14, padding: "1rem 1.25rem",
-                  boxShadow: "var(--shadow-xs)",
-                  opacity: isLocked ? 0.6 : 1,
-                  transition: "box-shadow 0.2s",
-                }}>
-                  {/* Circle */}
-                  <div style={{
-                    width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 800, fontSize: "1rem",
-                    background: sc.bg, color: sc.color, border: `2px solid ${sc.border}`,
-                  }}>
-                    {sc.icon}
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 700, fontSize: "0.925rem", color: "var(--text)" }}>
-                        Level {lv.levelNumber}: {lv.title}
-                      </span>
-                      <span style={{
-                        padding: "2px 9px", borderRadius: 999, fontSize: "0.68rem", fontWeight: 700,
-                        background: sc.bg, color: sc.color,
-                      }}>
-                        {sc.label}{status !== "locked" && status !== "available" ? scoreStr : ""}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: "0.77rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
-                      {attempts > 0 ? `${attempts} attempt${attempts > 1 ? "s" : ""}` : "Not started"}
-                    </div>
-                  </div>
-
-                  {/* Button */}
-                  <div style={{ flexShrink: 0 }}>
-                    {status === "locked" && (
-                      <button className="btn btn-ghost btn-sm" disabled>🔒 Locked</button>
-                    )}
-                    {status === "available" && (
-                      <button className="btn btn-primary btn-sm" disabled={isBusy}
-                        onClick={() => handleLevelRegister(lv.levelNumber)}>
-                        {isBusy ? "Registering..." : "Register"}
-                      </button>
-                    )}
-                    {status === "active" && (
-                      <button className="btn btn-primary btn-sm"
-                        onClick={() => navigate(`/courses/${id}/level/${lv.levelNumber}`)}>
-                        ▶ Study Now
-                      </button>
-                    )}
-                    {status === "completed" && (
-                      <button className="btn btn-outline btn-sm"
-                        onClick={() => navigate(`/courses/${id}/level/${lv.levelNumber}`)}>
-                        Review
-                      </button>
-                    )}
-                    {status === "failed" && (
-                      <button className="btn btn-outline btn-sm" disabled={isBusy}
-                        style={{ borderColor: "var(--danger)", color: "var(--danger)" }}
-                        onClick={() => handleLevelRegister(lv.levelNumber)}>
-                        {isBusy ? "..." : "Re-register"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* ── COURSE CONTENTS (Lessons) ─────────────────────────────────────── */}
-      <section style={{ marginBottom: "2.5rem" }}>
-        <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text)", margin: "0 0 1rem",
-          display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span>📋</span> Course Contents
-        </h2>
-
-        {(!course.lessons || course.lessons.length === 0) ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">📋</div>
-            <p>No lessons have been added yet.</p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {course.lessons.map((lesson, idx) => (
-              <div key={idx} style={{
-                display: "flex", alignItems: "flex-start", gap: "0.9rem",
-                background: "var(--surface)", border: "1.5px solid var(--border)",
-                borderRadius: 12, padding: "0.9rem 1.1rem",
-                boxShadow: "var(--shadow-xs)",
-              }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontWeight: 700, fontSize: "0.8rem",
-                  background: "var(--primary-light)", color: "var(--primary)",
-                }}>
-                  {lesson.order ?? idx + 1}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--text)", marginBottom: "0.2rem" }}>
-                    {lesson.title}
-                  </div>
-                  {lesson.content && (
-                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                      {lesson.content}
-                    </div>
-                  )}
-                </div>
-              </div>
+          {/* Stats */}
+          <div style={{ display:"flex", gap:"1.25rem", marginTop:"0.875rem", flexWrap:"wrap" }}>
+            {[
+              { icon:"📚", val:`${totalLevels} Level${totalLevels!==1?"s":""}` },
+              { icon:"📋", val:`${totalLessons} Lesson${totalLessons!==1?"s":""}` },
+              ...(!isAdmin && totalLevels > 0 ? [{ icon:"🎯", val:`${pct}% Complete` }] : []),
+            ].map(s => (
+              <span key={s.val} style={{ fontSize:"0.82rem", fontWeight:600, color:"rgba(255,255,255,0.75)", display:"flex", alignItems:"center", gap:"0.3rem", fontFamily:"'Nunito',sans-serif" }}>
+                {s.icon} {s.val}
+              </span>
             ))}
           </div>
+
+          {/* Progress bar */}
+          {!isAdmin && totalLevels > 0 && (
+            <div style={{ marginTop:"1rem" }}>
+              <div style={{ height:5, background:"rgba(255,255,255,0.15)", borderRadius:999 }}>
+                <div style={{ height:"100%", width:`${pct}%`, borderRadius:999, transition:"width 0.5s", background: pct===100 ? T.teal : "linear-gradient(90deg,#6366f1,#818cf8)" }} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Description ───────────────────────────────────── */}
+        {course.description && (
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"1.1rem 1.4rem", marginBottom:"1.75rem" }}>
+            <p style={{ margin:0, color:T.muted, lineHeight:1.75, fontSize:"0.875rem" }}>{course.description}</p>
+          </div>
         )}
-      </section>
 
-      {/* ── QUIZZES (Admin) ──────────────────────────────────────────────── */}
-      {isAdmin && (
-        <section>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text)", margin: "0 0 1rem",
-            display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span>📝</span> Quizzes
-          </h2>
+        {/* ── Toast ─────────────────────────────────────────── */}
+        {regMsg.text && (
+          <div style={{ position:"fixed", bottom:"1.75rem", right:"1.75rem", zIndex:9999, display:"flex", alignItems:"center", gap:"0.625rem", padding:"0.75rem 1.125rem", borderRadius:12, fontWeight:700, fontSize:"0.875rem", fontFamily:"'Plus Jakarta Sans',sans-serif",
+            background: regMsg.type==="success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.1)",
+            border:`1px solid ${regMsg.type==="success" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+            color: regMsg.type==="success" ? T.green : T.red,
+            boxShadow:"0 8px 28px rgba(0,0,0,0.4)", backdropFilter:"blur(12px)", animation:"toastIn 0.25s ease both",
+          }}>
+            <span>{regMsg.type==="success" ? "✅" : "⚠️"}</span>
+            {regMsg.text}
+          </div>
+        )}
 
-          {quizzes.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">📝</div>
-              <p>No quizzes for this course yet.</p>
+        {/* ── LEVELS (Student) ──────────────────────────────── */}
+        {!isAdmin && totalLevels > 0 && (
+          <section style={{ marginBottom:"2rem" }}>
+            <SectionHeader icon="📚" title="Course Levels" />
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.625rem" }}>
+              {course.levels.map(lv => {
+                const ls       = levelStatuses.find(s => s.levelNumber === lv.levelNumber);
+                const status   = ls?.status || "locked";
+                const sc       = STATUS_CFG[status] || STATUS_CFG.locked;
+                const isBusy   = registering === lv.levelNumber;
+                const attempts = ls?.attemptCount || 0;
+                const scoreStr = ls?.score != null ? ` · ${ls.score}%` : "";
+                const isLocked = status === "locked";
+
+                return (
+                  <div key={lv.levelNumber} className="level-card" data-locked={isLocked}
+                    style={{ display:"flex", alignItems:"center", gap:"1rem", flexWrap:"wrap", background:T.surface, border:`1px solid ${sc.border}`, borderRadius:14, padding:"1rem 1.25rem", opacity: isLocked ? 0.5 : 1, boxShadow:"0 2px 12px rgba(0,0,0,0.15)" }}>
+
+                    {/* Circle icon */}
+                    <div style={{ width:44, height:44, borderRadius:12, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.1rem", background:sc.bg, border:`1.5px solid ${sc.border}` }}>
+                      {sc.icon}
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", flexWrap:"wrap", marginBottom:"0.2rem" }}>
+                        <span style={{ fontWeight:800, fontSize:"0.9rem", color:T.text, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                          Level {lv.levelNumber}: {lv.title}
+                        </span>
+                        <span style={{ padding:"2px 9px", borderRadius:999, fontSize:"0.65rem", fontWeight:700, background:sc.bg, color:sc.color, border:`1px solid ${sc.border}`, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                          {sc.label}{status!=="locked"&&status!=="available" ? scoreStr : ""}
+                        </span>
+                        {status === "active" && (
+                          <span style={{ width:6, height:6, borderRadius:"50%", background:T.teal, animation:"pulse 1.5s ease-in-out infinite", flexShrink:0 }} />
+                        )}
+                      </div>
+                      <div style={{ fontSize:"0.75rem", color:T.muted }}>
+                        {attempts > 0 ? `${attempts} attempt${attempts>1?"s":""}` : "Not started"}
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <div style={{ flexShrink:0 }}>
+                      {status === "locked" && (
+                        <button disabled style={{ padding:"0.4rem 0.875rem", borderRadius:8, border:`1px solid ${T.border}`, background:"transparent", color:T.muted, fontSize:"0.78rem", fontWeight:700, cursor:"not-allowed", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>🔒 Locked</button>
+                      )}
+                      {status === "available" && (
+                        <button className="primary-btn" disabled={isBusy} onClick={() => handleLevelRegister(lv.levelNumber)}
+                          style={{ padding:"0.4rem 1rem", borderRadius:9, border:"none", background:"linear-gradient(135deg,#14b8a6,#6366f1)", color:"white", fontSize:"0.8rem", fontWeight:800, cursor: isBusy?"default":"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif", boxShadow:"0 3px 10px rgba(20,184,166,0.2)" }}>
+                          {isBusy ? <span style={{ display:"inline-block", width:12, height:12, border:"2px solid rgba(255,255,255,0.3)", borderTopColor:"white", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} /> : "Register"}
+                        </button>
+                      )}
+                      {status === "active" && (
+                        <button className="primary-btn" onClick={() => navigate(`/courses/${id}/level/${lv.levelNumber}`)}
+                          style={{ padding:"0.4rem 1rem", borderRadius:9, border:"none", background:"linear-gradient(135deg,#14b8a6,#6366f1)", color:"white", fontSize:"0.8rem", fontWeight:800, cursor:"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif", display:"flex", alignItems:"center", gap:"0.35rem", boxShadow:"0 3px 10px rgba(20,184,166,0.2)" }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Study Now
+                        </button>
+                      )}
+                      {status === "completed" && (
+                        <button className="outline-btn" onClick={() => navigate(`/courses/${id}/level/${lv.levelNumber}`)}
+                          style={{ padding:"0.4rem 1rem", borderRadius:9, border:`1px solid rgba(94,234,212,0.3)`, background:"rgba(94,234,212,0.05)", color:T.teal, fontSize:"0.78rem", fontWeight:700, cursor:"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                          Review
+                        </button>
+                      )}
+                      {status === "failed" && (
+                        <button className="outline-btn" disabled={isBusy} onClick={() => handleLevelRegister(lv.levelNumber)}
+                          style={{ padding:"0.4rem 1rem", borderRadius:9, border:`1px solid rgba(248,113,113,0.3)`, background:"rgba(248,113,113,0.06)", color:T.red, fontSize:"0.78rem", fontWeight:700, cursor: isBusy?"default":"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                          {isBusy ? "…" : "Re-register"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ── LESSONS ───────────────────────────────────────── */}
+        <section style={{ marginBottom:"2rem" }}>
+          <SectionHeader icon="📋" title="Course Contents" />
+          {(!course.lessons || course.lessons.length === 0) ? (
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"3.5rem 1.5rem", background:T.surface, border:`1px dashed rgba(94,234,212,0.12)`, borderRadius:16, textAlign:"center" }}>
+              <div style={{ fontSize:"2.5rem", marginBottom:"0.75rem" }}>📋</div>
+              <p style={{ color:T.muted, fontSize:"0.875rem" }}>No lessons have been added yet.</p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
-              {quizzes.map((quiz) => (
-                <div key={quiz._id} style={{
-                  background: "var(--surface)", border: "1.5px solid var(--border)",
-                  borderRadius: 14, padding: "1.25rem", boxShadow: "var(--shadow-xs)",
-                  display: "flex", flexDirection: "column", gap: "0.75rem",
-                }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
-                    <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)" }}>
-                      📝 {quiz.title}
-                    </span>
-                    <span style={{
-                      padding: "2px 9px", borderRadius: 999, fontSize: "0.68rem", fontWeight: 700,
-                      background: "var(--primary-light)", color: "var(--primary)", flexShrink: 0,
-                    }}>
-                      L{quiz.levelNumber ?? 1}
-                    </span>
+            <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+              {course.lessons.map((lesson, idx) => (
+                <div key={idx} className="lesson-row" style={{ display:"flex", alignItems:"flex-start", gap:"0.875rem", background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:"0.9rem 1.1rem" }}>
+                  <div style={{ width:32, height:32, borderRadius:9, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:"0.75rem", fontFamily:"'Plus Jakarta Sans',sans-serif", background:"rgba(99,102,241,0.12)", color:"rgba(129,140,248,0.85)", border:"1px solid rgba(99,102,241,0.2)" }}>
+                    {lesson.order ?? idx + 1}
                   </div>
-                  <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                    {quiz.questions?.length ?? 0} questions · {quiz.totalMarks} marks
-                  </p>
-                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                    <Link to={`/quiz/${quiz._id}?courseId=${course._id}`}
-                      className="btn btn-primary btn-sm" style={{ alignSelf: "flex-start" }}>
-                      Preview →
-                    </Link>
-                    <button className="btn btn-outline btn-sm"
-                      onClick={() => navigate(`/quiz/edit/${quiz._id}`)}
-                      style={{ alignSelf: "flex-start" }}>
-                      ✏️ Edit
-                    </button>
+                  <div>
+                    <div style={{ fontWeight:700, fontSize:"0.875rem", color:T.text, marginBottom:"0.2rem", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>{lesson.title}</div>
+                    {lesson.content && (
+                      <div style={{ fontSize:"0.8rem", color:T.muted, lineHeight:1.55 }}>{lesson.content}</div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
         </section>
-      )}
+
+        {/* ── QUIZZES (Admin) ───────────────────────────────── */}
+        {isAdmin && (
+          <section>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", flexWrap:"wrap", gap:"0.75rem" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                <span style={{ fontSize:"1rem" }}>📝</span>
+                <h2 style={{ fontSize:"0.9375rem", fontWeight:800, color:T.text, margin:0, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>Quizzes</h2>
+                <span style={{ padding:"2px 9px", borderRadius:999, fontSize:"0.65rem", fontWeight:700, background:"rgba(94,234,212,0.08)", color:T.teal, border:"1px solid rgba(94,234,212,0.2)", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                  {quizzes.length}
+                </span>
+              </div>
+              <button className="primary-btn" onClick={() => navigate(`/quiz/create`)}
+                style={{ padding:"0.45rem 1rem", borderRadius:9, border:"none", background:"linear-gradient(135deg,#14b8a6,#6366f1)", color:"white", fontSize:"0.8rem", fontWeight:800, cursor:"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif", boxShadow:"0 3px 10px rgba(20,184,166,0.2)", display:"flex", alignItems:"center", gap:"0.35rem" }}>
+                + New Quiz
+              </button>
+            </div>
+
+            {quizzes.length === 0 ? (
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"3.5rem 1.5rem", background:T.surface, border:`1px dashed rgba(94,234,212,0.12)`, borderRadius:16, textAlign:"center" }}>
+                <div style={{ fontSize:"2.5rem", marginBottom:"0.75rem" }}>📝</div>
+                <p style={{ color:T.muted, fontSize:"0.875rem" }}>No quizzes for this course yet.</p>
+              </div>
+            ) : (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:"0.875rem" }}>
+                {quizzes.map(quiz => (
+                  <div key={quiz._id} className="quiz-card" style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:16, padding:"1.25rem", display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"0.5rem" }}>
+                      <span style={{ fontWeight:800, fontSize:"0.875rem", color:T.text, fontFamily:"'Plus Jakarta Sans',sans-serif", lineHeight:1.3 }}>
+                        📝 {quiz.title}
+                      </span>
+                      <span style={{ padding:"2px 9px", borderRadius:999, fontSize:"0.65rem", fontWeight:700, background:"rgba(99,102,241,0.1)", color:"rgba(129,140,248,0.85)", border:"1px solid rgba(99,102,241,0.2)", flexShrink:0, fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                        L{quiz.levelNumber ?? 1}
+                      </span>
+                    </div>
+                    <p style={{ margin:0, fontSize:"0.78rem", color:T.muted }}>
+                      {quiz.questions?.length ?? 0} questions · {quiz.totalMarks} marks
+                    </p>
+                    <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
+                      <Link to={`/quiz/${quiz._id}?courseId=${course._id}`}
+                        style={{ padding:"0.4rem 0.875rem", borderRadius:8, background:"linear-gradient(135deg,#14b8a6,#6366f1)", color:"white", fontSize:"0.78rem", fontWeight:800, textDecoration:"none", fontFamily:"'Plus Jakarta Sans',sans-serif", boxShadow:"0 2px 8px rgba(20,184,166,0.18)" }}>
+                        Preview →
+                      </Link>
+                      <button className="outline-btn" onClick={() => navigate(`/quiz/edit/${quiz._id}`)}
+                        style={{ padding:"0.4rem 0.875rem", borderRadius:8, border:`1px solid ${T.border}`, background:"transparent", color:T.muted, fontSize:"0.78rem", fontWeight:700, cursor:"pointer", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                        ✏️ Edit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }

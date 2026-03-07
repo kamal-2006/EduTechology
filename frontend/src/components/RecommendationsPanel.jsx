@@ -90,7 +90,7 @@ export default function RecommendationsPanel({ studentId, compact = false }) {
 
   if (recs.length === 0) {
     return (
-      <div style={{ background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 14,
+      <div style={{ backgroundColor:"#0f172a", border: "1.5px solid var(--border)", borderRadius: 14,
         padding: compact ? "1rem" : "1.5rem", textAlign: "center", color: "var(--text-muted)" }}>
         <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🎓</div>
         <p style={{ fontSize: "0.875rem", fontWeight: 600, margin: "0 0 0.3rem" }}>No recommendations yet</p>
@@ -113,7 +113,7 @@ export default function RecommendationsPanel({ studentId, compact = false }) {
       {/* ── Status banner ─────────────────────────────────────────────── */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: sm.bg, border: `1.5px solid ${sm.border || sm.bg}`,
+        border: `1.5px solid #0f172a`,backgroundColor:"#0f172a",
         borderRadius: 12, padding: "0.7rem 1rem", marginBottom: "1rem",
         flexWrap: "wrap", gap: "0.5rem",
       }}>
@@ -204,8 +204,7 @@ function RecommendationCard({ rec, meta, onNavigate }) {
   return (
     <div
       style={{
-        background: meta.bg,
-        border: `1px solid ${meta.border}`,
+        border: `1.5px solid #0f172a`,backgroundColor:"#0f172a",
         borderRadius: 10,
         padding: "0.65rem 0.9rem",
         display: "flex",

@@ -1,24 +1,141 @@
-﻿import { useState, useContext } from "react";
+﻿import { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api.js";
 import { AuthContext } from "../App.jsx";
 
-export default function Login() {
-  const navigate = useNavigate();
-  const { setUser } = useContext(AuthContext);
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState("student");
-  const [showPassword, setShowPassword] = useState(false);
+/* ── Animated particle canvas ─────────────────────────────── */
+function NeuralCanvas() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let raf;
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const NODES = 38;
+    const nodes = Array.from({ length: NODES }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 2 + 1,
+      pulse: Math.random() * Math.PI * 2,
+    }));
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      nodes.forEach((n) => {
+        n.x += n.vx; n.y += n.vy; n.pulse += 0.02;
+        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+      });
+      for (let i = 0; i < NODES; i++) {
+        for (let j = i + 1; j < NODES; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 130) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(94,234,212,${(1 - d / 130) * 0.18})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+      nodes.forEach((n) => {
+        const alpha = 0.5 + 0.5 * Math.sin(n.pulse);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + Math.sin(n.pulse) * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(94,234,212,${alpha * 0.7})`;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, (n.r + 3) * (0.7 + 0.3 * Math.sin(n.pulse)), 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(94,234,212,${alpha * 0.15})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, []);
+  return <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />;
+}
+
+/* ── Typewriter headline ──────────────────────────────────── */
+function Typewriter({ texts }) {
+  const [display, setDisplay] = useState("");
+  const [idx, setIdx] = useState(0);
+  const [phase, setPhase] = useState("typing");
+  useEffect(() => {
+    const current = texts[idx % texts.length];
+    let t;
+    if (phase === "typing") {
+      if (display.length < current.length) {
+        t = setTimeout(() => setDisplay(current.slice(0, display.length + 1)), 55);
+      } else {
+        t = setTimeout(() => setPhase("waiting"), 1800);
+      }
+    } else if (phase === "waiting") {
+      t = setTimeout(() => setPhase("erasing"), 400);
+    } else {
+      if (display.length > 0) {
+        t = setTimeout(() => setDisplay(display.slice(0, -1)), 28);
+      } else {
+        setIdx((i) => i + 1);
+        setPhase("typing");
+      }
+    }
+    return () => clearTimeout(t);
+  }, [display, phase, idx, texts]);
+  return (
+    <span>
+      {display}
+      <span style={{ animation: "blink 1s step-end infinite", color: "#5eead4" }}>|</span>
+    </span>
+  );
+}
+
+/* ── Demo credentials map ─────────────────────────────────── */
+const DEMO = {
+  student: { email: "alice@test.com",          password: "student1234" },
+  admin:   { email: "admin@educationpsg.com",  password: "admin1234"   },
+};
+
+/* ── Main Login ───────────────────────────────────────────── */
+export default function Login() {
+  const navigate   = useNavigate();
+  const { setUser } = useContext(AuthContext);
+  const [form, setForm]           = useState({ email: "", password: "" });
+  const [error, setError]         = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [role, setRole]           = useState("student");
+  const [showPassword, setShowPw] = useState(false);
+  const [mounted, setMounted]     = useState(false);
+  const [demoActive, setDemoActive] = useState(null); // "student" | "admin" | null
+
+  useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
+
+  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  /* Auto-fill demo credentials with a brief highlight flash */
+  const fillDemo = (demoRole) => {
+    setRole(demoRole);
+    setForm({ email: DEMO[demoRole].email, password: DEMO[demoRole].password });
+    setDemoActive(demoRole);
+    setTimeout(() => setDemoActive(null), 1000);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
       const { data } = await authAPI.login(form);
       localStorage.setItem("token", data.token);
@@ -27,566 +144,329 @@ export default function Login() {
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
+
+  const typewriterTexts = [
+    "Personalised for you.",
+    "AI-driven mastery.",
+    "Learn without limits.",
+    "Your skills, amplified.",
+  ];
 
   return (
     <>
       <style>{`
-        html, body, #root {
-          margin: 0;
-          padding: 0;
-          height: 100vh;
-          overflow: hidden;
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@300;400;500;600;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body, #root { height: 100%; overflow: hidden; }
+
+        @keyframes blink      { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes fadeUp     { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes glowPulse  {
+          0%,100%{ box-shadow: 0 0 18px rgba(94,234,212,0.25), 0 0 40px rgba(94,234,212,0.08); }
+          50%    { box-shadow: 0 0 28px rgba(94,234,212,0.45), 0 0 60px rgba(94,234,212,0.15); }
         }
-        .hero-section {
-          display: flex;
+        @keyframes shimmer    { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes floatBadge { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-8px) rotate(-2deg)} }
+        @keyframes rotateRing { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes inputFlash {
+          0%  { border-color: rgba(94,234,212,0.9); box-shadow: 0 0 0 3px rgba(94,234,212,0.2); background: rgba(94,234,212,0.08); }
+          100%{ border-color: rgba(94,234,212,0.18); box-shadow: none; background: rgba(15,23,42,0.6); }
         }
-        .mobile-logo {
-          display: none;
+
+        .edu-input {
+          width:100%; background:rgba(15,23,42,0.6); border:1px solid rgba(94,234,212,0.18);
+          border-radius:10px; color:#e2e8f0; font-family:'Nunito',sans-serif;
+          font-size:0.9rem; outline:none; transition:all 0.25s;
+          padding:0.75rem 0.875rem 0.75rem 2.75rem;
         }
-        @media (max-width: 1024px) {
-          .hero-section {
-            display: none !important;
-          }
-          .mobile-logo {
-            display: flex !important;
-          }
+        .edu-input::placeholder { color:rgba(148,163,184,0.45); }
+        .edu-input:focus { border-color:rgba(94,234,212,0.6); background:rgba(15,23,42,0.85); box-shadow:0 0 0 3px rgba(94,234,212,0.07); }
+        .edu-input.flashing { animation: inputFlash 1s ease forwards; }
+
+        .submit-btn {
+          width:100%; padding:0.875rem; border:none; border-radius:10px; cursor:pointer;
+          font-family:'Plus Jakarta Sans',sans-serif; font-size:0.9375rem; font-weight:700; letter-spacing:0.01em;
+          background:linear-gradient(135deg,#14b8a6 0%,#0891b2 50%,#6366f1 100%);
+          background-size:200% 200%; color:white; transition:all 0.3s; position:relative; overflow:hidden;
+        }
+        .submit-btn:hover:not(:disabled) { background-position:right center; transform:translateY(-1px); box-shadow:0 8px 25px rgba(20,184,166,0.35); }
+        .submit-btn:disabled { opacity:0.6; cursor:not-allowed; }
+        .submit-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 20%,rgba(255,255,255,0.08) 50%,transparent 80%); background-size:200% auto; animation:shimmer 2s linear infinite; }
+
+        .tab-btn { flex:1; padding:0.5rem 0.75rem; border:none; border-radius:8px; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.78rem; font-weight:700; letter-spacing:0.02em; transition:all 0.2s; text-transform:uppercase; }
+        .tab-active   { background:linear-gradient(135deg,#14b8a6,#6366f1); color:white; box-shadow:0 2px 12px rgba(99,102,241,0.35); }
+        .tab-inactive { background:transparent; color:rgba(148,163,184,0.6); }
+        .tab-inactive:hover { color:#94a3b8; }
+
+        .stat-card    { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:1rem 1.25rem; flex:1; }
+        .feature-pill { display:flex; align-items:center; gap:0.6rem; background:rgba(94,234,212,0.07); border:1px solid rgba(94,234,212,0.15); border-radius:999px; padding:0.4rem 0.875rem; font-size:0.75rem; color:rgba(94,234,212,0.9); font-family:'Nunito',sans-serif; font-weight:600; }
+
+        .demo-btn {
+          flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:0.25rem;
+          padding:0.625rem 0.875rem; border-radius:10px; cursor:pointer; transition:all 0.22s; text-align:left;
+          border:1px solid rgba(94,234,212,0.2); background:rgba(94,234,212,0.04);
+        }
+        .demo-btn:hover { background:rgba(94,234,212,0.1); border-color:rgba(94,234,212,0.45); transform:translateY(-1px); }
+        .demo-btn.demo-admin { border-color:rgba(167,139,250,0.25); background:rgba(167,139,250,0.04); }
+        .demo-btn.demo-admin:hover { background:rgba(167,139,250,0.1); border-color:rgba(167,139,250,0.5); }
+        .demo-btn.flashing        { border-color:rgba(94,234,212,0.8)!important; background:rgba(94,234,212,0.15)!important; }
+        .demo-btn.demo-admin.flashing { border-color:rgba(167,139,250,0.8)!important; background:rgba(167,139,250,0.15)!important; }
+
+        @media (max-width:900px) {
+          .left-panel  { display:none!important; }
+          .right-panel { flex:1!important; }
         }
       `}</style>
-      <div style={styles.container}>
-        {/* Left Section: Hero */}
-        <div style={styles.leftSection} className="hero-section">
-        {/* Abstract background elements */}
-        <div style={styles.bgOverlay}>
-          <div style={styles.bgCircle1}></div>
-          <div style={styles.bgCircle2}></div>
-        </div>
 
-        <div style={styles.heroContent}>
-          {/* Logo */}
-          <div style={styles.logoContainer}>
-            <div style={styles.logoBox}>
-              <svg style={styles.logoSvg} fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z" fill="currentColor"></path>
-              </svg>
-            </div>
-            <span style={styles.logoText}>EduAI</span>
-          </div>
+      <div style={{ display:"flex", height:"100vh", fontFamily:"'Nunito',sans-serif", background:"#060d1a", overflow:"hidden" }}>
 
-          {/* Hero Text */}
-          <h1 style={styles.heroTitle}>
-            AI-Powered Personalized Learning for Everyone.
-          </h1>
-          <p style={styles.heroSubtitle}>
-            Unlock your potential with AI-driven education. Join thousands of students achieving their learning goals.
-          </p>
-
-          {/* Image Container */}
-          <div style={styles.imageContainer}>
-            <div style={{
-              ...styles.image,
-              backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAgRPiFVjVMPM4ext6TfdcQ9DQYTbq9cQoUO9knUEFK7L4IvD9hv9oAuHd6PQg5mBYQhDpnBtlHULJkHf_YSFDvjJ1EaTuwODwXsW0qsVr0dziM1ZS3en1qJms7FlxO9jpgUBuR7pS576gOBvok5nxmqCTmknbi1AtpLae3g3VOEIcVTVvuCK0L65pa2rG_JeCRXg5etqc5GV95b6SgLzFDVDpFddPL0oMm3MCQN2wTiMLLAOpwibmQ04wJnu8EO9kWrPYqcu7Fow')"
-            }}></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Section: Login Card */}
-      <div style={styles.rightSection}>
-        <div style={styles.formContainer}>
-          {/* Mobile Logo */}
-          <div style={styles.mobileLogoContainer} className="mobile-logo">
-            <svg style={styles.mobileLogoSvg} fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z" fill="currentColor"></path>
+        {/* ── LEFT PANEL ── */}
+        <div className="left-panel" style={{
+          flex:"0 0 52%", position:"relative", overflow:"hidden",
+          background:"linear-gradient(160deg,#060d1a 0%,#0a1628 40%,#071420 100%)",
+          display:"flex", flexDirection:"column", justifyContent:"center", padding:"3rem",
+          opacity: mounted ? 1 : 0, transition:"opacity 0.6s ease",
+        }}>
+          <NeuralCanvas />
+          <div style={{ position:"absolute", top:"-15%", left:"-10%", width:"55%", height:"55%", borderRadius:"50%", background:"radial-gradient(circle,rgba(20,184,166,0.12) 0%,transparent 70%)", pointerEvents:"none" }} />
+          <div style={{ position:"absolute", bottom:"-15%", right:"-10%", width:"60%", height:"60%", borderRadius:"50%", background:"radial-gradient(circle,rgba(99,102,241,0.1) 0%,transparent 70%)", pointerEvents:"none" }} />
+          <div style={{ position:"absolute", top:"8%", right:"8%", width:"120px", height:"120px", pointerEvents:"none", animation:"rotateRing 18s linear infinite" }}>
+            <svg viewBox="0 0 120 120" style={{ width:"100%", height:"100%" }}>
+              <circle cx="60" cy="60" r="55" fill="none" stroke="rgba(94,234,212,0.12)" strokeWidth="1" strokeDasharray="8 5"/>
             </svg>
-            <span style={styles.mobileLogoText}>EduAI</span>
           </div>
 
-          {/* Header */}
-          <div style={styles.header}>
-            <h2 style={styles.title}>Welcome Back</h2>
-            <p style={styles.subtitle}>Sign in to continue your learning journey.</p>
-          </div>
-
-          {/* Role Selector Tabs */}
-          <div style={styles.tabsContainer}>
-            <button
-              type="button"
-              onClick={() => setRole("student")}
-              style={role === "student" ? styles.tabActive : styles.tabInactive}
-              onMouseEnter={(e) => {
-                if (role !== "student") e.currentTarget.style.color = "#334155";
-              }}
-              onMouseLeave={(e) => {
-                if (role !== "student") e.currentTarget.style.color = "#64748b";
-              }}
-            >
-              Student
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("admin")}
-              style={role === "admin" ? styles.tabActive : styles.tabInactive}
-              onMouseEnter={(e) => {
-                if (role !== "admin") e.currentTarget.style.color = "#334155";
-              }}
-              onMouseLeave={(e) => {
-                if (role !== "admin") e.currentTarget.style.color = "#64748b";
-              }}
-            >
-              Admin
-            </button>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div style={styles.errorBox}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              {error}
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} style={styles.form}>
-            {/* Email Field */}
-            <div style={styles.fieldContainer}>
-              <label style={styles.label}>Email or Username</label>
-              <div style={styles.inputWrapper}>
-                <span style={styles.icon}>✉</span>
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  placeholder="Enter your email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#6366f1";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "#e2e8f0";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
+          <div style={{ position:"relative", zIndex:2, maxWidth:"480px" }}>
+            {/* Logo */}
+            <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"2.5rem", animation: mounted ? "fadeUp 0.6s ease both" : "none" }}>
+              <div style={{ width:"40px", height:"40px", borderRadius:"10px", background:"linear-gradient(135deg,#14b8a6,#6366f1)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 20px rgba(94,234,212,0.3)", animation:"glowPulse 3s ease-in-out infinite" }}>
+                <svg width="22" height="22" fill="none" viewBox="0 0 48 48">
+                  <path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z" fill="white"/>
+                </svg>
               </div>
+              <span style={{ color:"white", fontSize:"1.375rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, letterSpacing:"-0.02em" }}>EduAI</span>
+              <span style={{ background:"rgba(94,234,212,0.15)", border:"1px solid rgba(94,234,212,0.3)", borderRadius:"999px", padding:"0.2rem 0.625rem", fontSize:"0.6rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, color:"#5eead4", letterSpacing:"0.1em", textTransform:"uppercase" }}>Hackathon</span>
             </div>
 
-            {/* Password Field */}
-            <div style={styles.fieldContainer}>
-              <div style={styles.labelRow}>
-                <label style={styles.label}>Password</label>
-                <a href="#" style={styles.forgotLink}>Forgot Password?</a>
+            {/* Headline */}
+            <div style={{ animation: mounted ? "fadeUp 0.6s 0.1s ease both" : "none", marginBottom:"1.25rem" }}>
+              <p style={{ color:"rgba(94,234,212,0.7)", fontSize:"0.75rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"0.625rem" }}>AI-Powered Education Platform</p>
+              <h1 style={{ color:"white", fontSize:"2.4rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, lineHeight:1.2, letterSpacing:"-0.02em", marginBottom:"0.5rem" }}>
+                <Typewriter texts={typewriterTexts} />
+              </h1>
+              <p style={{ color:"rgba(148,163,184,0.7)", fontSize:"0.9375rem", lineHeight:1.7, fontFamily:"'Nunito',sans-serif" }}>
+                Adaptive AI engine maps your unique learning path. Real-time skill assessment. Knowledge that sticks.
+              </p>
+            </div>
+
+            {/* Feature pills */}
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"0.5rem", marginBottom:"2rem", animation: mounted ? "fadeUp 0.6s 0.2s ease both" : "none" }}>
+              {["🧠 Adaptive AI","📊 Skill Mapping","🎯 Goal Tracking","♿ Accessible"].map(f => (
+                <div key={f} className="feature-pill">{f}</div>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div style={{ display:"flex", gap:"0.875rem", animation: mounted ? "fadeUp 0.6s 0.3s ease both" : "none" }}>
+              {[["50K+","Active Learners"],["94%","Completion Rate"],["3.2×","Faster Mastery"]].map(([val, label]) => (
+                <div key={label} className="stat-card">
+                  <div style={{ color:"#5eead4", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"1.375rem", letterSpacing:"-0.02em" }}>{val}</div>
+                  <div style={{ color:"rgba(148,163,184,0.6)", fontSize:"0.7rem", fontFamily:"'Nunito',sans-serif", marginTop:"0.2rem" }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Floating badge */}
+            <div style={{ position:"absolute", bottom:"-4rem", right:"-1rem", animation:"floatBadge 4s ease-in-out infinite" }}>
+              <div style={{ width:"80px", height:"80px", borderRadius:"50%", background:"linear-gradient(135deg,rgba(20,184,166,0.2),rgba(99,102,241,0.2))", border:"1px solid rgba(94,234,212,0.2)", backdropFilter:"blur(12px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:"0.15rem" }}>
+                <span style={{ fontSize:"1.25rem" }}>🏆</span>
+                <span style={{ color:"rgba(94,234,212,0.8)", fontSize:"0.55rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.05em" }}>WINNER</span>
               </div>
-              <div style={styles.inputWrapper}>
-                <span style={styles.icon}>🔒</span>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                  style={styles.input}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#6366f1";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "#e2e8f0";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
-                >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT PANEL ── */}
+        <div className="right-panel" style={{
+          flex:"0 0 48%", display:"flex", alignItems:"center", justifyContent:"center",
+          padding:"2rem", background:"#06101f", overflowY:"auto",
+          borderLeft:"1px solid rgba(94,234,212,0.07)",
+        }}>
+          <div style={{
+            width:"100%", maxWidth:"400px",
+            opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(20px)",
+            transition:"opacity 0.7s 0.15s ease, transform 0.7s 0.15s ease",
+          }}>
+
+            {/* Heading */}
+            <div style={{ marginBottom:"1.75rem" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.5rem" }}>
+                <div style={{ height:"2px", width:"24px", background:"linear-gradient(90deg,#14b8a6,#6366f1)", borderRadius:"999px" }} />
+                <span style={{ color:"rgba(94,234,212,0.7)", fontSize:"0.7rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}>Secure Access</span>
+              </div>
+              <h2 style={{ color:"white", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"2rem", letterSpacing:"-0.02em", lineHeight:1.2, marginBottom:"0.375rem" }}>
+                Welcome Back
+              </h2>
+              <p style={{ color:"rgba(148,163,184,0.6)", fontSize:"0.9rem", lineHeight:1.7, fontFamily:"'Nunito',sans-serif" }}>
+                Continue your AI-powered learning journey.
+              </p>
+            </div>
+
+            {/* Role tabs — Student & Admin only */}
+            <div style={{ display:"flex", gap:"0.375rem", background:"rgba(255,255,255,0.04)", padding:"0.3rem", borderRadius:"10px", border:"1px solid rgba(255,255,255,0.07)", marginBottom:"1.5rem" }}>
+              {[
+                { key:"student", label:"Student", icon:"🎓" },
+                { key:"admin",   label:"Admin",   icon:"⚙️" },
+              ].map(({ key, label, icon }) => (
+                <button key={key} className={`tab-btn ${role === key ? "tab-active" : "tab-inactive"}`} onClick={() => setRole(key)}>
+                  {icon} {label}
                 </button>
-              </div>
+              ))}
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.submitButton,
-                opacity: loading ? 0.75 : 1,
-                cursor: loading ? "not-allowed" : "pointer"
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.background = "#5558e3";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#6366f1";
-              }}
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
+            {/* Error */}
+            {error && (
+              <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", padding:"0.75rem 0.875rem", borderRadius:"10px", background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)", color:"#fca5a5", fontSize:"0.875rem", marginBottom:"1.25rem", fontFamily:"'Nunito',sans-serif" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {error}
+              </div>
+            )}
 
-          {/* Create Account Link */}
-          <p style={styles.signupText}>
-            Don't have an account?{" "}
-            <Link to="/register" style={styles.signupLink}>
-              Create an account
-            </Link>
-          </p>
+            {/* Form */}
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:"1.125rem" }}>
 
-          {/* Footer Links */}
-          <div style={styles.footer}>
-            <a
-              href="#"
-              style={styles.footerLink}
-              onMouseEnter={(e) => e.currentTarget.style.color = "#6366f1"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
-            >
-              Privacy Policy
-            </a>
-            <a
-              href="#"
-              style={styles.footerLink}
-              onMouseEnter={(e) => e.currentTarget.style.color = "#6366f1"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
-            >
-              Terms of Service
-            </a>
-            <a
-              href="#"
-              style={styles.footerLink}
-              onMouseEnter={(e) => e.currentTarget.style.color = "#6366f1"}
-              onMouseLeave={(e) => e.currentTarget.style.color = "#94a3b8"}
-            >
-              Help Center
-            </a>
+              {/* Email */}
+              <div>
+                <label style={{ display:"block", color:"rgba(203,213,225,0.8)", fontSize:"0.78rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"0.45rem" }}>Email</label>
+                <div style={{ position:"relative" }}>
+                  <span style={{ position:"absolute", left:"0.875rem", top:"50%", transform:"translateY(-50%)", pointerEvents:"none", color:"rgba(94,234,212,0.5)", fontSize:"0.875rem" }}>✉</span>
+                  <input
+                    type="email" name="email" autoComplete="email"
+                    placeholder="you@university.edu"
+                    value={form.email} onChange={handleChange} required
+                    className={`edu-input${demoActive ? " flashing" : ""}`}
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.45rem" }}>
+                  <label style={{ color:"rgba(203,213,225,0.8)", fontSize:"0.78rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase" }}>Password</label>
+                  <a href="#" style={{ fontSize:"0.8rem", color:"rgba(94,234,212,0.7)", textDecoration:"none", fontFamily:"'Nunito',sans-serif", fontWeight:600 }}
+                    onMouseEnter={e => e.currentTarget.style.color="#5eead4"}
+                    onMouseLeave={e => e.currentTarget.style.color="rgba(94,234,212,0.7)"}>
+                    Forgot password?
+                  </a>
+                </div>
+                <div style={{ position:"relative" }}>
+                  <span style={{ position:"absolute", left:"0.875rem", top:"50%", transform:"translateY(-50%)", pointerEvents:"none", color:"rgba(94,234,212,0.5)", fontSize:"0.875rem" }}>🔒</span>
+                  <input
+                    type={showPassword ? "text" : "password"} name="password" autoComplete="current-password"
+                    placeholder="Enter your password"
+                    value={form.password} onChange={handleChange} required
+                    className={`edu-input${demoActive ? " flashing" : ""}`}
+                    style={{ paddingRight:"2.75rem" }}
+                  />
+                  <button type="button" onClick={() => setShowPw(v => !v)} style={{ position:"absolute", right:"0.875rem", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(148,163,184,0.5)", fontSize:"1rem", padding:0, lineHeight:1 }}>
+                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Demo accounts section ── */}
+              <div>
+                {/* Divider label */}
+                <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"0.65rem" }}>
+                  <div style={{ flex:1, height:"1px", background:"rgba(94,234,212,0.1)" }} />
+                  <span style={{ color:"rgba(94,234,212,0.5)", fontSize:"0.68rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
+                    ⚡ Try a Demo Account
+                  </span>
+                  <div style={{ flex:1, height:"1px", background:"rgba(94,234,212,0.1)" }} />
+                </div>
+
+                {/* Two demo cards */}
+                <div style={{ display:"flex", gap:"0.625rem" }}>
+
+                  {/* Student demo */}
+                  <button
+                    type="button"
+                    className={`demo-btn${demoActive === "student" ? " flashing" : ""}`}
+                    onClick={() => fillDemo("student")}
+                  >
+                    <span style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
+                      <span style={{ fontSize:"1rem" }}>🎓</span>
+                      <span style={{ color:"#5eead4", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.8rem" }}>Student Demo</span>
+                      {demoActive === "student" && (
+                        <span style={{ fontSize:"0.65rem", color:"#5eead4", fontFamily:"'Nunito',sans-serif", background:"rgba(94,234,212,0.15)", borderRadius:"999px", padding:"0.1rem 0.4rem" }}>✓ filled</span>
+                      )}
+                    </span>
+                    <span style={{ color:"rgba(148,163,184,0.4)", fontSize:"0.68rem", fontFamily:"'Nunito',sans-serif" }}>alice@test.com</span>
+                  </button>
+
+                  {/* Admin demo */}
+                  <button
+                    type="button"
+                    className={`demo-btn demo-admin${demoActive === "admin" ? " flashing" : ""}`}
+                    onClick={() => fillDemo("admin")}
+                  >
+                    <span style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
+                      <span style={{ fontSize:"1rem" }}>⚙️</span>
+                      <span style={{ color:"#a78bfa", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.8rem" }}>Admin Demo</span>
+                      {demoActive === "admin" && (
+                        <span style={{ fontSize:"0.65rem", color:"#a78bfa", fontFamily:"'Nunito',sans-serif", background:"rgba(167,139,250,0.15)", borderRadius:"999px", padding:"0.1rem 0.4rem" }}>✓ filled</span>
+                      )}
+                    </span>
+                    <span style={{ color:"rgba(148,163,184,0.4)", fontSize:"0.68rem", fontFamily:"'Nunito',sans-serif" }}>admin@educationpsg.com</span>
+                  </button>
+
+                </div>
+              </div>
+
+              {/* Remember me */}
+              <label style={{ display:"flex", alignItems:"center", gap:"0.625rem", cursor:"pointer" }}>
+                <div style={{ width:"16px", height:"16px", borderRadius:"4px", border:"1px solid rgba(94,234,212,0.3)", background:"rgba(94,234,212,0.05)", flexShrink:0 }} />
+                <span style={{ color:"rgba(148,163,184,0.6)", fontSize:"0.875rem", fontFamily:"'Nunito',sans-serif" }}>Keep me signed in for 30 days</span>
+              </label>
+
+              {/* Submit */}
+              <button type="submit" disabled={loading} className="submit-btn" style={{ marginTop:"0.25rem" }}>
+                {loading ? (
+                  <span style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"0.6rem" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation:"rotateRing 0.8s linear infinite" }}>
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    </svg>
+                    Authenticating...
+                  </span>
+                ) : `Sign In as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+              </button>
+            </form>
+
+            {/* Sign up */}
+            <p style={{ textAlign:"center", marginTop:"1.75rem", color:"rgba(100,116,139,0.7)", fontSize:"0.875rem", fontFamily:"'Nunito',sans-serif", marginBottom:"1.5rem" }}>
+              New to EduAI?{" "}
+              <Link to="/register" style={{ color:"#5eead4", fontWeight:700, textDecoration:"none" }}
+                onMouseEnter={e => e.currentTarget.style.color="#2dd4bf"}
+                onMouseLeave={e => e.currentTarget.style.color="#5eead4"}>
+                Create free account →
+              </Link>
+            </p>
+
+            {/* Footer */}
+            <div style={{ display:"flex", justifyContent:"center", gap:"1.25rem" }}>
+              {["Privacy","Terms","Help"].map(l => (
+                <a key={l} href="#" style={{ fontSize:"0.75rem", color:"rgba(100,116,139,0.4)", textDecoration:"none", fontFamily:"'Nunito',sans-serif", transition:"color 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.color="rgba(94,234,212,0.6)"}
+                  onMouseLeave={e => e.currentTarget.style.color="rgba(100,116,139,0.4)"}>
+                  {l}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 }
-
-/* ── Styles ──────────────────────────────────────────────── */
-const styles = {
-  container: {
-    display: "flex",
-    width: "100%",
-    height: "100vh",
-    fontFamily: "'Inter', sans-serif",
-    overflow: "hidden",
-  },
-  // Left Hero Section
-  leftSection: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "2rem",
-    overflow: "hidden",
-    background: "#0f172a",
-    position: "relative",
-  },
-  bgOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    opacity: 0.15,
-  },
-  bgCircle1: {
-    position: "absolute",
-    top: "-10%",
-    left: "-10%",
-    width: "50%",
-    height: "50%",
-    borderRadius: "50%",
-    background: "#2dd4bf",
-    filter: "blur(100px)",
-  },
-  bgCircle2: {
-    position: "absolute",
-    bottom: "-10%",
-    right: "-10%",
-    width: "60%",
-    height: "60%",
-    borderRadius: "50%",
-    background: "white",
-    filter: "blur(120px)",
-  },
-  heroContent: {
-    position: "relative",
-    zIndex: 1,
-    maxWidth: "500px",
-    width: "100%",
-    textAlign: "left",
-  },
-  logoContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.625rem",
-    marginBottom: "1.5rem",
-  },
-  logoBox: {
-    background: "white",
-    padding: "0.4rem",
-    borderRadius: "0.4rem",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-  },
-  logoSvg: {
-    width: "1.5rem",
-    height: "1.5rem",
-    color: "#0f172a",
-  },
-  logoText: {
-    color: "white",
-    fontSize: "1.5rem",
-    fontWeight: 800,
-    letterSpacing: "-0.025em",
-  },
-  heroTitle: {
-    color: "white",
-    fontSize: "2rem",
-    fontWeight: 800,
-    lineHeight: 1.2,
-    marginBottom: "0.875rem",
-    letterSpacing: "-0.025em",
-  },
-  heroSubtitle: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: "0.9375rem",
-    lineHeight: 1.6,
-    marginBottom: "1.5rem",
-    maxWidth: "26rem",
-  },
-  imageContainer: {
-    width: "100%",
-    height: "240px",
-    borderRadius: "0.75rem",
-    background: "rgba(255, 255, 255, 0.08)",
-    backdropFilter: "blur(10px)",
-    padding: "0.75rem",
-    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 0 20px rgba(45, 212, 191, 0.2)",
-    overflow: "hidden",
-    border: "1px solid rgba(255, 255, 255, 0.15)",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    borderRadius: "0.5rem",
-    backgroundPosition: "center",
-    backgroundSize: "cover",
-  },
-  // Right Form Section
-  rightSection: {
-    width: "100%",
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "1.5rem",
-    background: "#f8fafc",
-    overflow: "auto",
-  },
-  formContainer: {
-    width: "100%",
-    maxWidth: "420px",
-  },
-  mobileLogoContainer: {
-    display: "none",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginBottom: "1.5rem",
-  },
-  mobileLogoSvg: {
-    width: "1.25rem",
-    height: "1.25rem",
-    color: "#6366f1",
-  },
-  mobileLogoText: {
-    color: "#0f172a",
-    fontSize: "1.125rem",
-    fontWeight: 700,
-  },
-  header: {
-    marginBottom: "1.25rem",
-  },
-  title: {
-    fontSize: "1.875rem",
-    fontWeight: 800,
-    color: "#0f172a",
-    letterSpacing: "-0.025em",
-    marginBottom: "0.375rem",
-    lineHeight: 1.2,
-  },
-  subtitle: {
-    color: "#64748b",
-    fontSize: "0.875rem",
-    lineHeight: 1.5,
-  },
-  // Role Tabs
-  tabsContainer: {
-    display: "flex",
-    background: "rgba(226, 232, 240, 0.5)",
-    padding: "0.25rem",
-    borderRadius: "0.625rem",
-    marginBottom: "1.5rem",
-    border: "1px solid rgba(226, 232, 240, 0.6)",
-  },
-  tabActive: {
-    flex: 1,
-    padding: "0.5rem",
-    fontSize: "0.8125rem",
-    fontWeight: 700,
-    borderRadius: "0.375rem",
-    border: "none",
-    background: "#6366f1",
-    color: "white",
-    cursor: "pointer",
-    transition: "all 0.2s",
-    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-  },
-  tabInactive: {
-    flex: 1,
-    padding: "0.5rem",
-    fontSize: "0.8125rem",
-    fontWeight: 600,
-    borderRadius: "0.375rem",
-    border: "none",
-    background: "transparent",
-    color: "#64748b",
-    cursor: "pointer",
-    transition: "all 0.2s",
-  },
-  // Error
-  errorBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    padding: "0.75rem 0.875rem",
-    borderRadius: "0.625rem",
-    background: "#fef2f2",
-    border: "1px solid #fecaca",
-    color: "#dc2626",
-    fontSize: "0.8125rem",
-    fontWeight: 500,
-    marginBottom: "1rem",
-  },
-  // Form
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  fieldContainer: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  label: {
-    display: "block",
-    fontSize: "0.8125rem",
-    fontWeight: 600,
-    color: "#334155",
-    marginBottom: "0.375rem",
-  },
-  labelRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "0.375rem",
-  },
-  forgotLink: {
-    fontSize: "0.8125rem",
-    fontWeight: 600,
-    color: "#6366f1",
-    textDecoration: "none",
-  },
-  inputWrapper: {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-  },
-  icon: {
-    position: "absolute",
-    left: "0.875rem",
-    fontSize: "1.125rem",
-    color: "#94a3b8",
-    pointerEvents: "none",
-  },
-  input: {
-    width: "100%",
-    padding: "0.75rem 0.875rem 0.75rem 2.5rem",
-    borderRadius: "0.625rem",
-    border: "1.5px solid #e2e8f0",
-    background: "white",
-    color: "#0f172a",
-    fontSize: "0.875rem",
-    outline: "none",
-    transition: "all 0.2s",
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-  },
-  eyeButton: {
-    position: "absolute",
-    right: "0.875rem",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "1.125rem",
-    color: "#94a3b8",
-    padding: 0,
-  },
-  submitButton: {
-    width: "100%",
-    padding: "0.75rem",
-    borderRadius: "0.625rem",
-    border: "none",
-    background: "#6366f1",
-    color: "white",
-    fontSize: "0.9375rem",
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "all 0.2s",
-    boxShadow: "0 4px 6px -1px rgba(99, 102, 241, 0.15)",
-    marginTop: "0.25rem",
-  },
-  signupText: {
-    textAlign: "center",
-    marginTop: "1.5rem",
-    color: "#475569",
-    fontWeight: 500,
-    fontSize: "0.875rem",
-  },
-  signupLink: {
-    fontSize: "0.875rem",
-    fontWeight: 700,
-    color: "#6366f1",
-    textDecoration: "none",
-  },
-  footer: {
-    marginTop: "1.5rem",
-    display: "flex",
-    justifyContent: "center",
-    gap: "1.25rem",
-  },
-  footerLink: {
-    fontSize: "0.6875rem",
-    color: "#94a3b8",
-    textDecoration: "none",
-    transition: "color 0.2s",
-  },
-};
