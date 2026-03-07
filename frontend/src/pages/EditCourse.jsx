@@ -212,6 +212,9 @@ export default function EditCourse() {
           <Field label="Cover Image URL" hint="Paste a direct image URL, or leave blank.">
             <input style={inputStyle} value={basic.image} onChange={setBasicField("image")}
               onFocus={(e) => (e.target.style.borderColor = "var(--primary)")} onBlur={(e) => (e.target.style.borderColor = "var(--border)")} />
+            {basic.image && (
+              <div style={{ marginTop: "0.6rem", borderRadius: 8, overflow: "hidden", height: 110, background: `url("${basic.image}") center/cover no-repeat #f1f5f9`, border: "1.5px solid var(--border)" }} />
+            )}
           </Field>
         </div>
         <Field label="Max Quiz Attempts per Level">

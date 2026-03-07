@@ -115,7 +115,7 @@ export default function Dashboard() {
           <Link to="/students" className="btn btn-primary" style={{ marginTop: "1.25rem" }}>Browse Available Courses →</Link>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: "0.9rem" }}>
           {myCourses.slice(0, 4).map((course, idx) => {
             const totalLevels = course.levelStatuses?.length || 0;
             const doneLevels  = course.levelStatuses?.filter((ls) => ls.status === "completed").length || 0;
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 <div style={{
                   height: 72,
                   background: course.image
-                    ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.55)), url(${course.image}) center/cover`
+                    ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.55)), url("${course.image}") center/cover`
                     : FALLBACK_BG[idx % FALLBACK_BG.length],
                   position: "relative",
                 }}>
@@ -156,11 +156,11 @@ export default function Dashboard() {
                     }}>⚡ Level {activeLvl.levelNumber} active</span>
                   )}
                 </div>
-                <div style={{ padding: "0.85rem 1rem 1rem" }}>
-                  <h3 style={{ margin: "0 0 0.55rem", fontSize: "0.875rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.35 }}>
+                <div style={{ padding: "0.95rem 1.1rem 1.1rem" }}>
+                  <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.82rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.35 }}>
                     {course.title}
                   </h3>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.3rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 600, marginBottom: "0.3rem" }}>
                     <span>Progress</span>
                     <span style={{ color: pct === 100 ? "var(--success)" : "var(--primary)" }}>{doneLevels}/{totalLevels} · {pct}%</span>
                   </div>
@@ -189,7 +189,7 @@ export default function Dashboard() {
       {/* ── Quick Actions ──────────────────────────────────────────────── */}
       <section style={{ marginTop: "2rem" }}>
         <h2 className="section-title">Quick Actions</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(175px, 1fr))", gap: "0.85rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: "0.75rem" }}>
           {[
             { icon: "📚", label: "Browse Courses",  to: "/students",            desc: "Explore all available courses" },
             { icon: "🎓", label: "My Courses",       to: "/my-courses",          desc: "Track your learning progress" },
@@ -198,16 +198,16 @@ export default function Dashboard() {
             <Link key={act.to} to={act.to} style={{ textDecoration: "none" }}>
               <div
                 style={{
-                  background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 14,
-                  padding: "1.1rem", boxShadow: "var(--shadow-xs)", transition: "all 0.2s",
-                  display: "flex", flexDirection: "column", gap: "0.35rem", height: "100%",
+                  background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12,
+                  padding: "1.15rem 1.1rem", boxShadow: "var(--shadow-xs)", transition: "all 0.2s",
+                  display: "flex", flexDirection: "column", gap: "0.4rem", height: "100%",
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(99,102,241,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "var(--shadow-xs)"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                <span style={{ fontSize: "1.6rem" }}>{act.icon}</span>
-                <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--text)" }}>{act.label}</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", lineHeight: 1.4 }}>{act.desc}</span>
+                <span style={{ fontSize: "1.3rem" }}>{act.icon}</span>
+                <span style={{ fontWeight: 700, fontSize: "0.8rem", color: "var(--text)" }}>{act.label}</span>
+                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.4 }}>{act.desc}</span>
               </div>
             </Link>
           ))}

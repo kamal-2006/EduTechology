@@ -225,7 +225,7 @@ export default function Dashboard() {
                     <div style={{
                       ...styles.courseImage,
                       background: course.image
-                        ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${course.image}) center/cover`
+                        ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url("${course.image}") center/cover`
                         : FALLBACK_BG[idx % FALLBACK_BG.length],
                     }}>
                       <span style={{
@@ -364,7 +364,7 @@ function AdminDashboard({ analytics, user }) {
   return (
     <div style={styles.dashboardContainer}>
       <div style={styles.topHeader}>
-        <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#0f172a" }}>Admin Dashboard</h1>
+        <h1 style={{ fontSize: "18px", fontWeight: 800, color: "#0f172a" }}>Admin Dashboard</h1>
         <div style={styles.userProfile}>
           <div style={styles.userInfo}>
             <div style={styles.userName}>{user.name}</div>
@@ -532,13 +532,13 @@ const styles = {
     alignItems: "center",
   },
   welcomeTitle: {
-    fontSize: "28px",
-    fontWeight: 900,
+    fontSize: "20px",
+    fontWeight: 800,
     color: "#0f172a",
-    marginBottom: "8px",
+    marginBottom: "6px",
   },
   welcomeSubtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
   },
   dateBox: {
@@ -570,11 +570,11 @@ const styles = {
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+    gap: "12px",
   },
   statCard: {
-    padding: "20px",
+    padding: "18px 20px",
     borderRadius: "12px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
   },
@@ -582,37 +582,37 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "12px",
+    marginBottom: "10px",
   },
   statLabel: {
-    fontSize: "11px",
+    fontSize: "10px",
     fontWeight: 700,
     color: "#64748b",
-    letterSpacing: "0.5px",
+    letterSpacing: "0.4px",
   },
   statIconBox: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "8px",
+    width: "30px",
+    height: "30px",
+    borderRadius: "7px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
   statValue: {
-    fontSize: "28px",
-    fontWeight: 900,
+    fontSize: "22px",
+    fontWeight: 800,
     color: "#0f172a",
-    marginBottom: "4px",
+    marginBottom: "3px",
   },
   statTrend: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#10b981",
     fontWeight: 600,
   },
   statSubtext: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#64748b",
-    marginTop: "4px",
+    marginTop: "3px",
   },
   statProgressBar: {
     height: "6px",
@@ -633,8 +633,8 @@ const styles = {
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: "20px",
-    fontWeight: 800,
+    fontSize: "16px",
+    fontWeight: 700,
     color: "#0f172a",
   },
   viewAllLink: {
@@ -657,12 +657,12 @@ const styles = {
     transition: "all 0.2s",
   },
   courseImage: {
-    height: "140px",
+    height: "110px",
     position: "relative",
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "flex-end",
-    padding: "12px",
+    padding: "10px",
   },
   courseBadge: {
     padding: "4px 10px",
@@ -672,18 +672,18 @@ const styles = {
     letterSpacing: "0.5px",
   },
   courseContent: {
-    padding: "16px",
+    padding: "16px 18px",
   },
   courseTitle: {
-    fontSize: "16px",
+    fontSize: "13px",
     fontWeight: 700,
     color: "#0f172a",
-    marginBottom: "4px",
+    marginBottom: "3px",
   },
   courseInstructor: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#64748b",
-    marginBottom: "12px",
+    marginBottom: "10px",
   },
   progressSection: {
     display: "flex",
@@ -734,12 +734,12 @@ const styles = {
     justifyContent: "center",
   },
   quickActionLabel: {
-    fontSize: "14px",
+    fontSize: "11px",
     fontWeight: 700,
     color: "#0f172a",
   },
   activityTitle: {
-    fontSize: "18px",
+    fontSize: "15px",
     fontWeight: 800,
     color: "#0f172a",
     marginBottom: "16px",

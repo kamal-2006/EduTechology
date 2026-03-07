@@ -119,7 +119,7 @@ export default function Students() {
                 <div style={{
                   height: 130, position: "relative", flexShrink: 0,
                   background: course.image
-                    ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${course.image}) center/cover`
+                    ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url("${course.image}") center/cover`
                     : FALLBACK_BG[idx % FALLBACK_BG.length],
                 }}>
                   {/* Difficulty badge */}

@@ -160,7 +160,7 @@ export default function CoursePage() {
         boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
         position: "relative",
         background: course.image
-          ? `linear-gradient(rgba(15,15,40,0.58), rgba(15,15,40,0.72)), url(${course.image}) center/cover`
+          ? `linear-gradient(rgba(15,15,40,0.58), rgba(15,15,40,0.72)), url("${course.image}") center/cover`
           : FALLBACK_BG[totalLevels % FALLBACK_BG.length],
         minHeight: 200,
         display: "flex", flexDirection: "column", justifyContent: "flex-end",

@@ -1,9 +1,11 @@
-﻿import { useState } from "react";
+﻿import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api.js";
+import { AuthContext } from "../App.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { setUser } = useContext(AuthContext);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,7 @@ export default function Login() {
       const { data } = await authAPI.login(form);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");

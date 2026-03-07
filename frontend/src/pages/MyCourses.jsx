@@ -128,7 +128,7 @@ export default function MyCourses() {
                 <div style={{
                   height: 120, position: "relative", flexShrink: 0,
                   background: course.image
-                    ? `linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.6)), url(${course.image}) center/cover`
+                    ? `linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.6)), url("${course.image}") center/cover`
                     : FALLBACK_BG[idx % FALLBACK_BG.length],
                 }}>
                   <span style={{

@@ -423,6 +423,9 @@ export default function CreateCourse() {
               onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
               onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
             />
+            {basic.image && (
+              <div style={{ marginTop: "0.6rem", borderRadius: 8, overflow: "hidden", height: 110, background: `url("${basic.image}") center/cover no-repeat #f1f5f9`, border: "1.5px solid var(--border)" }} />
+            )}
           </Field>
         </div>
 
