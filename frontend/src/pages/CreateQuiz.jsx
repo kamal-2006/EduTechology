@@ -43,6 +43,8 @@ const STYLES = `
   .add-opt-btn:hover { border-color: rgba(94,234,212,0.35) !important; color: rgba(94,234,212,0.7) !important; }
   .q-card { transition: border-color 0.2s; }
   .step-pill { transition: all 0.2s; }
+  select.dark-input option { background: #0f172a; color: rgba(226,232,240,0.88); }
+  select.dark-input option:checked { background: rgba(94,234,212,0.15); color: #5eead4; }
   @media (max-width: 540px) { .step-label { display: none; } }
 `;
 
@@ -80,7 +82,7 @@ const darkSelect = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235eead4' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
   backgroundRepeat: "no-repeat",
   backgroundPosition: "right 10px center",
-  backgroundColor: "rgba(255,255,255,0.04)",
+  backgroundColor: "#0f172a",
   paddingRight: "2.2rem",
 };
 
