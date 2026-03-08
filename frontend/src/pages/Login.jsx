@@ -412,11 +412,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Remember me */}
-              <label style={{ display:"flex", alignItems:"center", gap:"0.625rem", cursor:"pointer" }}>
-                <div style={{ width:"16px", height:"16px", borderRadius:"4px", border:"1px solid rgba(94,234,212,0.3)", background:"rgba(94,234,212,0.05)", flexShrink:0 }} />
-                <span style={{ color:"rgba(148,163,184,0.6)", fontSize:"0.875rem", fontFamily:"'Nunito',sans-serif" }}>Keep me signed in for 30 days</span>
-              </label>
 
               {/* Submit */}
               <button type="submit" disabled={loading} className="submit-btn" style={{ marginTop:"0.25rem" }}>

@@ -2,10 +2,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/api.js";
 
-const ROLES = [
-  { value: "student",  label: "Student",  icon: "🎓", desc: "I want to learn"  },
-  { value: "faculty",  label: "Faculty",  icon: "👨‍🏫", desc: "I want to teach"  },
-];
 
 /* ── Animated neural canvas (shared design with Login) ─────── */
 function NeuralCanvas() {
@@ -143,8 +139,10 @@ export default function Register() {
         .submit-btn:disabled { opacity:0.6; cursor:not-allowed; }
         .submit-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 20%,rgba(255,255,255,0.08) 50%,transparent 80%); background-size:200% auto; animation:shimmer 2s linear infinite; }
 
-        .role-card { transition:all 0.2s; cursor:pointer; }
-        .role-card:hover { border-color:rgba(94,234,212,0.5) !important; background:rgba(94,234,212,0.04) !important; }
+        .tab-btn { flex:1; padding:0.55rem 0.75rem; border:none; border-radius:8px; cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:0.02em; transition:all 0.2s; text-transform:uppercase; }
+        .tab-active   { background:linear-gradient(135deg,#14b8a6,#6366f1); color:white; box-shadow:0 2px 12px rgba(99,102,241,0.35); }
+        .tab-inactive { background:transparent; color:rgba(148,163,184,0.6); }
+        .tab-inactive:hover { color:#94a3b8; background:rgba(255,255,255,0.04); }
 
         @media (max-width:900px) {
           .left-panel { display:none !important; }
@@ -220,10 +218,12 @@ export default function Register() {
 
         {/* ── RIGHT PANEL ── */}
         <div className="right-panel" style={{
-          flex:"0 0 52%", display:"flex", alignItems:"center", justifyContent:"center",
-          padding:"1.5rem 2rem", background:"#06101f", overflowY:"auto",
+          flex:"0 0 52%", overflowY:"auto",
+          background:"#06101f",
           borderLeft:"1px solid rgba(94,234,212,0.07)",
         }}>
+          {/* Inner centering wrapper: full min-height so vertical centering works even when overflowing */}
+          <div style={{ minHeight:"100%", display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
           <div style={{
             width:"100%", maxWidth:"460px",
             opacity: mounted ? 1 : 0, transform: mounted ? "none" : "translateY(20px)",
@@ -252,36 +252,23 @@ export default function Register() {
               </div>
             )}
 
-            {/* Role selector */}
-            <div style={{ marginBottom:"1.25rem" }}>
-              <label style={{ display:"block", color:"rgba(203,213,225,0.8)", fontSize:"0.78rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", marginBottom:"0.6rem" }}>I am a</label>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
-                {ROLES.map(r => {
-                  const active = form.role === r.value;
-                  return (
-                    <button key={r.value} type="button" className="role-card"
-                      onClick={() => setForm(p => ({ ...p, role: r.value }))}
-                      style={{
-                        position:"relative", display:"flex", alignItems:"center", gap:"0.75rem",
-                        padding:"0.875rem 1rem", borderRadius:"12px", border:"1px solid",
-                        borderColor: active ? "rgba(94,234,212,0.5)" : "rgba(255,255,255,0.08)",
-                        background: active ? "rgba(94,234,212,0.07)" : "rgba(255,255,255,0.03)",
-                        cursor:"pointer", textAlign:"left", transition:"all 0.2s",
-                        boxShadow: active ? "0 0 0 1px rgba(94,234,212,0.2), inset 0 1px 0 rgba(94,234,212,0.05)" : "none",
-                      }}>
-                      <div style={{ width:"36px", height:"36px", borderRadius:"9px", background: active ? "rgba(94,234,212,0.15)" : "rgba(255,255,255,0.05)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.1rem", flexShrink:0 }}>{r.icon}</div>
-                      <div>
-                        <p style={{ margin:0, fontSize:"0.875rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, color: active ? "#5eead4" : "rgba(226,232,240,0.9)" }}>{r.label}</p>
-                        <p style={{ margin:0, fontSize:"0.72rem", fontFamily:"'Nunito',sans-serif", color: active ? "rgba(94,234,212,0.7)" : "rgba(148,163,184,0.5)", marginTop:"0.1rem" }}>{r.desc}</p>
-                      </div>
-                      {active && (
-                        <div style={{ position:"absolute", top:"0.5rem", right:"0.625rem", width:"16px", height:"16px", borderRadius:"50%", background:"linear-gradient(135deg,#14b8a6,#6366f1)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+            {/* Role selector — tab style matching Login */}
+            <div style={{ marginBottom:"1.5rem" }}>
+              <label style={{ display:"block", color:"rgba(203,213,225,0.8)", fontSize:"0.73rem", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:"0.55rem" }}>I am a</label>
+              <div style={{ display:"flex", gap:"0.375rem", background:"rgba(255,255,255,0.04)", padding:"0.3rem", borderRadius:"10px", border:"1px solid rgba(255,255,255,0.07)" }}>
+                {[
+                  { value:"student", label:"Student", icon:"🎓" },
+                  { value:"faculty", label:"Faculty", icon:"👨‍🏫" },
+                ].map(r => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    className={`tab-btn ${form.role === r.value ? "tab-active" : "tab-inactive"}`}
+                    onClick={() => setForm(p => ({ ...p, role: r.value }))}
+                  >
+                    {r.icon} {r.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -390,6 +377,7 @@ export default function Register() {
                 </a>
               ))}
             </div>
+          </div>
           </div>
         </div>
       </div>
